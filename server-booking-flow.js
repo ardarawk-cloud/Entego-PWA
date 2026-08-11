@@ -1,0 +1,75 @@
+const ENTEGO_SERVER_ORDER='entego_current_order_v2';
+const ENTEGO_SERVER_STATE='entego_backend_state';
+const sbRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch{return fallback}};
+const sbWrite=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
+const sbRoute=()=>localStorage.getItem('entego_route')||'home';
+const sbMoney=n=>`Rp${Number(n||0).toLocaleString('id-ID')}`;
+
+function setBackendState(state){localStorage.setItem(ENTEGO_SERVER_STATE,state)}
+function backendBadge(){
+ const routes=['checkout','orders','orderdetail','partner','partnerOrders','partnerOrderDetail'];
+ if(!routes.includes(sbRoute()))return;
+ const main=document.querySelector('main.content');if(!main||document.querySelector('#entegoBackendBadge'))return;
+ const state=localStorage.getItem(ENTEGO_SERVER_STATE)||'checking';
+ const box=document.createElement('div');box.id='entegoBackendBadge';box.className='card';
+ box.style.padding='10px 12px';box.innerHTML=state==='online'?'<span class="pill green">☁ Server Booking Online</span><span class="meta" style="margin-left:8px">SQLite Cloudflare aktif</span>':state==='offline'?'<span class="pill blue">⚠ Backend belum tersambung</span><span class="meta" style="margin-left:8px">Booking server belum dapat disimpan</span>':'<span class="pill">↻ Cek server…</span>';
+ main.prepend(box);
+}
+
+async function health(){
+ try{const r=await fetch('/api/health',{headers:{accept:'application/json'},cache:'no-store'});if(!r.ok)throw new Error('health');const data=await r.json();setBackendState(data.ok?'online':'offline')}catch{setBackendState('offline')}
+ document.querySelector('#entegoBackendBadge')?.remove();backendBadge();
+}
+
+function bookingPayload(){
+ const draft=sbRead('entego_booking_draft',{}),packages=sbRead('entego_partner_packages',[]),selected=localStorage.getItem('entego_selected_package');
+ const pkg=packages.find(x=>x.id===selected)||packages[0]||{id:draft.packageId||'standard',name:draft.packageName||'Standard Package',price:draft.packagePrice||0,duration:draft.duration||''};
+ const fee=75000,promo=150000,price=Number(pkg.price||draft.packagePrice||0);
+ return {vendorId:draft.vendorId||Number(localStorage.getItem('entego_vendor')||1),vendorName:draft.vendorName||'Mitra ENTEGO',packageId:pkg.id||'standard',packageName:pkg.name||'Standard Package',packagePrice:price,duration:draft.duration||pkg.duration||'',date:draft.date||'',time:draft.time||'',location:draft.location||'',note:draft.note||'',paymentMethod:localStorage.getItem('entego_pay')||'QRIS',fee,promo,total:Math.max(0,price+fee-promo)};
+}
+
+async function createServerBooking(button){
+ const original=button.textContent;button.disabled=true;button.textContent='Menyimpan Booking…';
+ localStorage.removeItem(ENTEGO_SERVER_ORDER);
+ try{
+  const r=await fetch('/api/bookings',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify(bookingPayload())});
+  const data=await r.json();if(!r.ok||!data.ok||!data.booking)throw new Error(data.error||'booking_failed');
+  sbWrite(ENTEGO_SERVER_ORDER,data.booking);setBackendState('online');
+  localStorage.setItem('entego_booking_status','baru');localStorage.setItem('entego_event_started','0');localStorage.setItem('entego_completed','0');localStorage.setItem('entego_cancelled','0');localStorage.setItem('entego_route','orders');
+  location.reload();
+ }catch(err){setBackendState('offline');button.disabled=false;button.textContent=original;alert('Booking belum tersimpan ke server ENTEGO. Coba lagi setelah deployment backend aktif.')}
+}
+
+async function syncStatus(status){
+ const order=sbRead(ENTEGO_SERVER_ORDER,null);if(!order?.id)return;
+ try{const r=await fetch(`/api/bookings/${encodeURIComponent(order.id)}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({status})});const data=await r.json();if(r.ok&&data.ok&&data.booking){sbWrite(ENTEGO_SERVER_ORDER,data.booking);setBackendState('online')}else throw new Error()}catch{setBackendState('offline')}
+}
+
+async function syncOrderFromServer(){
+ const order=sbRead(ENTEGO_SERVER_ORDER,null);if(!order?.id)return;
+ try{const r=await fetch(`/api/bookings/${encodeURIComponent(order.id)}`,{cache:'no-store'});if(!r.ok)return;const data=await r.json();if(data.ok&&data.booking){sbWrite(ENTEGO_SERVER_ORDER,data.booking);setBackendState('online');hydrateLedger(data.booking)}}catch{}
+}
+
+async function hydrateLedger(order){
+ if(sbRoute()!=='orderdetail')return;const main=document.querySelector('main.content');if(!main||document.querySelector('#entegoServerLedger'))return;
+ try{const r=await fetch(`/api/transactions?bookingId=${encodeURIComponent(order.id)}`,{cache:'no-store'});if(!r.ok)return;const data=await r.json();const tx=data.transactions?.[0];if(!tx)return;
+  const c=document.createElement('div');c.id='entegoServerLedger';c.className='card';c.innerHTML=`<b>Server Transaction</b><div class="meta">${tx.id}</div><div class="divider"></div><div class="row between"><span>${tx.method}</span><b>${sbMoney(tx.amount)}</b></div><div style="margin-top:8px"><span class="pill green">✓ ${tx.status}</span></div>`;main.appendChild(c);
+ }catch{}
+}
+
+document.addEventListener('click',e=>{
+ const pay=e.target.closest('#payBtn');if(!pay||sbRoute()!=='checkout')return;
+ e.preventDefault();e.stopImmediatePropagation();createServerBooking(pay);
+},true);
+
+document.addEventListener('click',e=>{
+ const el=e.target.closest('#acceptOrder,#rejectOrder,#startEvent,#completeEvent,#cancelOrder');if(!el)return;
+ setTimeout(()=>{
+  const map={acceptOrder:'diterima',rejectOrder:'ditolak',startEvent:'berlangsung',completeEvent:'selesai',cancelOrder:'dibatalkan'};
+  if(el.id==='cancelOrder'&&localStorage.getItem('entego_cancelled')!=='1')return;
+  syncStatus(map[el.id]);
+ },0);
+});
+
+const serverRun=()=>{backendBadge();syncOrderFromServer()};
+new MutationObserver(serverRun).observe(document.documentElement,{childList:true,subtree:true});window.addEventListener('load',()=>{health();serverRun()});health();serverRun();
