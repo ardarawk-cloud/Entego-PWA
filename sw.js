@@ -1,5 +1,5 @@
-const CACHE="entego-v24";
-const ASSETS=["/","/manifest.webmanifest?v=24","/icon-192.png?v=24","/icon-512.png?v=24","/icon-maskable-512.png?v=24","/apple-touch-icon.png?v=24","/logo-header.png?v=24","/cancel-flow.js?v=24","/final-flow.js?v=24","/reschedule-flow.js?v=24","/completion-flow.js?v=24","/ops-flow.js?v=24","/partner-category-flow.js?v=24","/partner-profile-flow.js?v=24","/partner-marketplace-flow.js?v=24","/partner-offer-flow.js?v=24","/market-booking-flow.js?v=24"];
+const CACHE="entego-v25";
+const ASSETS=["/","/manifest.webmanifest?v=25","/icon-192.png?v=25","/icon-512.png?v=25","/icon-maskable-512.png?v=25","/apple-touch-icon.png?v=25","/logo-header.png?v=25","/cancel-flow.js?v=25","/final-flow.js?v=25","/reschedule-flow.js?v=25","/completion-flow.js?v=25","/ops-flow.js?v=25","/partner-category-flow.js?v=25","/partner-profile-flow.js?v=25","/partner-marketplace-flow.js?v=25","/partner-offer-flow.js?v=25","/market-booking-flow.js?v=25"];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener("activate",e=>e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()])));
 self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match("/"))))});
