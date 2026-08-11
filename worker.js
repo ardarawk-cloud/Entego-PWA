@@ -44,6 +44,21 @@ export class EntegoStore extends DurableObject {
         event TEXT NOT NULL,
         created_at TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS reschedule_requests (
+        booking_id TEXT PRIMARY KEY,
+        new_date TEXT NOT NULL,
+        new_time TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS reviews (
+        booking_id TEXT PRIMARY KEY,
+        rating INTEGER NOT NULL,
+        comment TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
       CREATE INDEX IF NOT EXISTS idx_bookings_created ON bookings(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_transactions_booking ON transactions(booking_id);
       CREATE INDEX IF NOT EXISTS idx_events_booking ON booking_events(booking_id);
@@ -130,6 +145,60 @@ export class EntegoStore extends DurableObject {
     const id = clean(bookingId, 100);
     return this.sql.exec(`SELECT id,booking_id,type,method,amount,status,created_at FROM transactions WHERE booking_id = ? ORDER BY created_at DESC`, id).toArray();
   }
+
+  async requestReschedule(id, date, time) {
+    const booking = await this.getBooking(id);
+    const safeDate = clean(date, 20), safeTime = clean(time, 20);
+    if (!booking) return null;
+    if (!safeDate || !safeTime) throw new Error("RESCHEDULE_REQUIRED_FIELDS");
+    const now = new Date().toISOString();
+    this.sql.exec(
+      `INSERT INTO reschedule_requests (booking_id,new_date,new_time,status,created_at,updated_at) VALUES (?,?,?,?,?,?)
+       ON CONFLICT(booking_id) DO UPDATE SET new_date=excluded.new_date,new_time=excluded.new_time,status='pending',updated_at=excluded.updated_at`,
+      booking.id, safeDate, safeTime, "pending", now, now
+    );
+    this.sql.exec(`INSERT INTO booking_events (booking_id,event,created_at) VALUES (?,?,?)`, booking.id, "reschedule_requested", now);
+    return this.getReschedule(booking.id);
+  }
+
+  async getReschedule(id) {
+    return this.sql.exec(`SELECT booking_id,new_date,new_time,status,created_at,updated_at FROM reschedule_requests WHERE booking_id = ? LIMIT 1`, clean(id, 100)).toArray()[0] || null;
+  }
+
+  async decideReschedule(id, action) {
+    const booking = await this.getBooking(id);
+    const request = await this.getReschedule(id);
+    if (!booking || !request) return null;
+    const safeAction = clean(action, 20);
+    if (!["approve","reject","cancel"].includes(safeAction)) throw new Error("INVALID_RESCHEDULE_ACTION");
+    const now = new Date().toISOString();
+    const status = safeAction === "approve" ? "approved" : safeAction === "reject" ? "rejected" : "cancelled";
+    this.sql.exec(`UPDATE reschedule_requests SET status = ?, updated_at = ? WHERE booking_id = ?`, status, now, booking.id);
+    if (safeAction === "approve") {
+      this.sql.exec(`UPDATE bookings SET event_date = ?, event_time = ?, updated_at = ? WHERE id = ?`, request.new_date, request.new_time, now, booking.id);
+    }
+    this.sql.exec(`INSERT INTO booking_events (booking_id,event,created_at) VALUES (?,?,?)`, booking.id, `reschedule_${status}`, now);
+    return {request: await this.getReschedule(booking.id), booking: await this.getBooking(booking.id)};
+  }
+
+  async saveReview(id, rating, comment = "") {
+    const booking = await this.getBooking(id);
+    const score = Math.round(Number(rating) || 0);
+    if (!booking) return null;
+    if (score < 1 || score > 5) throw new Error("INVALID_RATING");
+    const now = new Date().toISOString();
+    this.sql.exec(
+      `INSERT INTO reviews (booking_id,rating,comment,created_at,updated_at) VALUES (?,?,?,?,?)
+       ON CONFLICT(booking_id) DO UPDATE SET rating=excluded.rating,comment=excluded.comment,updated_at=excluded.updated_at`,
+      booking.id, score, clean(comment, 1000), now, now
+    );
+    this.sql.exec(`INSERT INTO booking_events (booking_id,event,created_at) VALUES (?,?,?)`, booking.id, `review_${score}_star`, now);
+    return this.getReview(booking.id);
+  }
+
+  async getReview(id) {
+    return this.sql.exec(`SELECT booking_id,rating,comment,created_at,updated_at FROM reviews WHERE booking_id = ? LIMIT 1`, clean(id, 100)).toArray()[0] || null;
+  }
 }
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -146,23 +215,22 @@ export default {
     const store = env.ENT_STORE.getByName("entego-production");
     try {
       if (url.pathname === "/api/health" && request.method === "GET") {
-        return json({ok:true,service:"entego-api",storage:"durable-object-sqlite",version:"v26"});
+        return json({ok:true,service:"entego-api",storage:"durable-object-sqlite",version:"v27"});
       }
       if (url.pathname === "/api/bookings" && request.method === "POST") {
         const body = await request.json();
-        const booking = await store.createBooking(body);
-        return json({ok:true,booking}, 201);
+        return json({ok:true,booking:await store.createBooking(body)}, 201);
       }
       if (url.pathname === "/api/bookings" && request.method === "GET") {
-        const bookings = await store.listBookings(url.searchParams.get("limit") || 30);
-        return json({ok:true,bookings});
+        return json({ok:true,bookings:await store.listBookings(url.searchParams.get("limit") || 30)});
       }
       if (url.pathname === "/api/transactions" && request.method === "GET") {
         const bookingId = url.searchParams.get("bookingId");
         if (!bookingId) return json({ok:false,error:"bookingId_required"}, 400);
         return json({ok:true,transactions:await store.listTransactions(bookingId)});
       }
-      const match = url.pathname.match(/^\/api\/bookings\/([^/]+)$/);
+
+      let match = url.pathname.match(/^\/api\/bookings\/([^/]+)$/);
       if (match && request.method === "GET") {
         const booking = await store.getBooking(decodeURIComponent(match[1]));
         return booking ? json({ok:true,booking}) : json({ok:false,error:"not_found"}, 404);
@@ -172,11 +240,37 @@ export default {
         const booking = await store.updateStatus(decodeURIComponent(match[1]), body.status);
         return booking ? json({ok:true,booking}) : json({ok:false,error:"not_found"}, 404);
       }
+
+      match = url.pathname.match(/^\/api\/bookings\/([^/]+)\/reschedule$/);
+      if (match && request.method === "GET") {
+        return json({ok:true,reschedule:await store.getReschedule(decodeURIComponent(match[1]))});
+      }
+      if (match && request.method === "POST") {
+        const body = await request.json();
+        const reschedule = await store.requestReschedule(decodeURIComponent(match[1]), body.date, body.time);
+        return reschedule ? json({ok:true,reschedule}, 201) : json({ok:false,error:"not_found"}, 404);
+      }
+      if (match && request.method === "PATCH") {
+        const body = await request.json();
+        const result = await store.decideReschedule(decodeURIComponent(match[1]), body.action);
+        return result ? json({ok:true,...result}) : json({ok:false,error:"not_found"}, 404);
+      }
+
+      match = url.pathname.match(/^\/api\/bookings\/([^/]+)\/review$/);
+      if (match && request.method === "GET") {
+        return json({ok:true,review:await store.getReview(decodeURIComponent(match[1]))});
+      }
+      if (match && request.method === "POST") {
+        const body = await request.json();
+        const review = await store.saveReview(decodeURIComponent(match[1]), body.rating, body.comment || "");
+        return review ? json({ok:true,review}, 201) : json({ok:false,error:"not_found"}, 404);
+      }
+
       return json({ok:false,error:"api_route_not_found"}, 404);
     } catch (error) {
       const message = String(error?.message || error);
-      const badRequest = message === "BOOKING_REQUIRED_FIELDS" || message === "INVALID_STATUS";
-      return json({ok:false,error:badRequest ? message : "server_error"}, badRequest ? 400 : 500);
+      const bad = new Set(["BOOKING_REQUIRED_FIELDS","INVALID_STATUS","RESCHEDULE_REQUIRED_FIELDS","INVALID_RESCHEDULE_ACTION","INVALID_RATING"]);
+      return json({ok:false,error:bad.has(message) ? message : "server_error"}, bad.has(message) ? 400 : 500);
     }
   }
 };
