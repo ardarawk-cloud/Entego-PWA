@@ -1,18 +1,17 @@
-# ENTEGO PWA LOGO FIX v1.1
+# ENTEGO PWA STATIC ASSET FIX v1.2
 
-Perbaikan:
-- Logo header rusak/ENT dihapus.
-- Dedicated header logo PNG.
-- PWA icons 192/512 digenerate ulang.
-- Android maskable icon ditambahkan.
-- Apple touch icon ditambahkan.
-- Manifest dibangun ulang.
-- Cache icon dibump ke v11.
-- Service worker dibump ke entego-v11.
+Root cause fixed:
+Vite only bundled the app into dist. The flat-root PWA assets were not copied
+into dist, so the header logo and install icon could fall back/break.
+
+v1.2 copies manifest, service worker, all icons, Apple icon and header logo
+into dist after vite build.
 
 Cloudflare:
 Build command: npm run build
 Deploy command: npx wrangler deploy
 
-Setelah deploy:
-Hapus shortcut/PWA ENTEGO lama dari HP, refresh situs, lalu Tambahkan ke Desktop lagi agar Android membaca icon baru.
+After deploy:
+- remove old installed ENTEGO shortcut once
+- reload ENTEGO
+- Add to Home Screen again

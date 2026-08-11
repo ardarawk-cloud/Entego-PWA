@@ -39,7 +39,7 @@ function go(route){ state.route=route; save(); window.scrollTo(0,0); render(); }
 function topbar(title="ENTEGO",search=true,back=false,backRoute="home"){
   return `<div class="topbar"><div class="brand">
     <div class="${back?"page-title":"brandmark"}">
-      ${back?`<button class="back" data-route="${backRoute}">‹</button>`:`<div class="logo brand-logo"><img src="/logo-header.png?v=11" alt="ENTEGO"></div>`}
+      ${back?`<button class="back" data-route="${backRoute}">‹</button>`:`<div class="logo brand-logo"><img src="/logo-header.png?v=12" alt="ENTEGO"></div>`}
       <span>${title}</span>
     </div>
     <button class="iconbtn" data-route="notifications">🔔</button>
