@@ -39,7 +39,7 @@ function go(route){ state.route=route; save(); window.scrollTo(0,0); render(); }
 function topbar(title="ENTEGO",search=true,back=false,backRoute="home"){
   return `<div class="topbar"><div class="brand">
     <div class="${back?"page-title":"brandmark"}">
-      ${back?`<button class="back" data-route="${backRoute}">‹</button>`:`<div class="logo">E</div>`}
+      ${back?`<button class="back" data-route="${backRoute}">‹</button>`:`<div class="logo brand-logo"><img src="/icon-192.png" alt="ENTEGO"></div>`}
       <span>${title}</span>
     </div>
     <button class="iconbtn" data-route="notifications">🔔</button>
@@ -66,11 +66,25 @@ function vendorCard(v){
 function home(){
   return `<div class="phone">${topbar()}
   <main class="content">
-    <section class="hero"><small>ENTEGO • Bali</small><h1>Semua kebutuhan event dalam satu aplikasi.</h1><p>Booking talent & rental terpercaya, cepat dan transparan.</p><button class="btn primary" data-route="explore">Mulai Cari</button></section>
+    <section class="hero premium-hero">
+<div class="hero-badge">LIVE IN BALI</div>
+<small>ENTEGO • Entertainment & Rental Marketplace</small>
+<h1>Booking talent & rental event, semudah pesan transportasi.</h1>
+<p>Temukan mitra terverifikasi, harga transparan, booking aman, dan semua kebutuhan acara dalam satu aplikasi.</p>
+<div class="row hero-actions"><button class="btn primary" data-route="explore">Jelajahi Layanan</button><button class="btn glass" data-route="partnerOnboarding">Daftar Mitra</button></div>
+<div class="trust-row"><span>✓ Verified Partner</span><span>✓ ENTEGO Protection</span><span>✓ Secure Booking</span></div>
+</section>
     <section class="section"><div class="section-head"><h2>Kategori</h2><button class="link" data-route="explore">Lihat semua</button></div>
-      <div class="grid4">${DB.categories.slice(0,8).map(c=>`<div class="cat clickable" data-route="explore"><div class="emoji">${c[0]}</div><span>${c[1]}</span></div>`).join("")}</div>
+      <div class="grid4">${DB.categories.slice(0,12).map(c=>`<div class="cat clickable" data-route="explore"><div class="emoji">${c[0]}</div><span>${c[1]}</span></div>`).join("")}</div>
     </section>
-    <section class="section"><div class="section-head"><h2>Rekomendasi</h2><button class="link" data-route="explore">Lihat semua</button></div><div class="hscroll">${DB.vendors.map(vendorCard).join("")}</div></section>
+    <section class="section">
+<div class="section-head"><h2>Paket cepat</h2><button class="link" data-route="explore">Lihat semua</button></div>
+<div class="quick-grid">
+<div class="quick-card clickable" data-route="explore"><span>💍</span><b>Wedding</b><small>Talent + rental</small></div>
+<div class="quick-card clickable" data-route="explore"><span>🎉</span><b>Birthday</b><small>MC + DJ + decor</small></div>
+<div class="quick-card clickable" data-route="explore"><span>🏢</span><b>Corporate</b><small>Full event support</small></div>
+<div class="quick-card clickable" data-route="explore"><span>🌴</span><b>Private Party</b><small>Villa & beach event</small></div>
+</div></section><section class="section"><div class="section-head"><h2>Rekomendasi</h2><button class="link" data-route="explore">Lihat semua</button></div><div class="hscroll">${DB.vendors.map(vendorCard).join("")}</div></section>
     <section class="section banner"><b>🎉 Diskon booking pertama 10%</b><div class="meta">Gunakan kode ENTEGO10 saat checkout.</div></section>
   </main>${bottom("home")}</div>`;
 }
@@ -249,8 +263,20 @@ function partnerOnboarding(){return `<div class="phone">${topbar("Daftar Mitra",
 function supportChat(){return `<div class="phone">${topbar("ENTEGO Support",false,true,"help")}<main class="content"><div class="msg">Halo 👋 Ada yang bisa kami bantu terkait booking, pembayaran, atau akun?</div><div class="msg me">Saya ingin cek status booking.</div><div class="msg">Siap. Order #ENT-260815-001 tercatat di sistem.</div></main><div class="sticky-cta"><input style="flex:1;border:1px solid var(--line);border-radius:14px;padding:12px" placeholder="Tulis pesan..."><button class="btn primary">Kirim</button></div></div>`}
 function adminDispute(){return `<div class="phone">${topbar("Detail Dispute",false,true,"adminBookings")}<main class="content"><div class="card"><div class="row between"><b>#DSP-001</b><span class="pill blue">Review</span></div><p class="meta">Perubahan jadwal dilaporkan customer.</p></div><div class="card"><b>Bukti & kronologi</b><p class="meta">Chat, waktu booking dan status pembayaran tersedia untuk review.</p></div><div class="row"><button class="btn soft" style="flex:1">Refund</button><button class="btn primary" style="flex:1">Selesaikan</button></div></main></div>`}
 
+
+function services(){
+  const groups=[
+    ["Entertainment",["DJ","MC","Live Band","Penyanyi","Dancer","Talent","Event Organizer"]],
+    ["Creative",["Fotografer","Videografer","Makeup Artist","Kamera","Drone"]],
+    ["Rental",["Rental Mobil","Rental Motor","Sound System","Lighting","Videotron","Tenda","Dekorasi","Generator"]]
+  ];
+  return `<div class="phone">${topbar("Semua Layanan",true,true,"home")}<main class="content">
+    ${groups.map(g=>`<section class="section"><h2>${g[0]}</h2><div class="service-list">${g[1].map(x=>`<div class="service-item clickable" data-route="explore"><span>${DB.categories.find(c=>c[1]===x)?.[0]||"•"}</span><b>${x}</b><em>›</em></div>`).join("")}</div></section>`).join("")}
+  </main>${bottom("explore")}</div>`;
+}
+
 const routes = {
-  home,explore,detail,booking,checkout,orders,orderdetail,chatCustomer,favorites,profile,notifications,wallet,partnerOnboarding,supportChat,adminDispute,
+  home,services,explore,detail,booking,checkout,orders,orderdetail,chatCustomer,favorites,profile,notifications,wallet,partnerOnboarding,supportChat,adminDispute,
   addresses:()=>simplePage("Alamat Tersimpan",[["Rumah","Denpasar, Bali"],["Venue Favorit","Seminyak, Bali"]]),
   vouchers:()=>simplePage("Voucher & Promo",[["ENTEGO10","Diskon 10% booking pertama"],["BALI25","Diskon Rp25.000 area Bali"]]),
   settings:()=>simplePage("Pengaturan",[["Notifikasi","Aktif"],["Bahasa","Indonesia"],["Keamanan","PIN & biometrik"]]),
