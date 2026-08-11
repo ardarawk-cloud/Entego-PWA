@@ -10,6 +10,7 @@ const mbEsc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&
 const mbProfile=()=>mbRead('entego_partner_profile',{});
 const mbPackages=()=>mbRead('entego_partner_packages',[{id:'standard',name:'Standard Package',duration:'3 jam',price:1500000,description:''}]);
 const mbSelectedPackage=()=>{const id=localStorage.getItem('entego_selected_package');return mbPackages().find(x=>x.id===id)||mbPackages()[0]};
+const mbVendorPrice=id=>{const defaults={1:1500000,2:2800000,3:900000,4:1200000};if(Number(id)===1){const p=Number(mbProfile().price||0);if(p)return p}return defaults[Number(id)]||0};
 
 function addSearchFilters(){
  if(mbRoute()!=='explore')return;
@@ -23,7 +24,7 @@ function addSearchFilters(){
  const apply=()=>{
   const q=(document.querySelector('#searchInput')?.value||'').trim().toLowerCase(),cat=box.querySelector('#entegoFilterCat').value,area=box.querySelector('#entegoFilterArea').value,max=Number((box.querySelector('#entegoFilterMax').value||'').replace(/\D/g,''))||0;
   mbSave(ENTEGO_SEARCH_FILTERS,{q,cat,area,max:max||''});let visible=0;
-  main.querySelectorAll('[data-vendor]').forEach(card=>{const text=card.textContent.toLowerCase(),meta=card.querySelector('.meta')?.textContent||'',priceText=[...card.querySelectorAll('b')].find(el=>/^Rp/.test(el.textContent.trim()))?.textContent||'',price=Number(priceText.replace(/\D/g,''))||0;const okQ=!q||text.includes(q),okCat=cat==='all'||text.includes(cat.toLowerCase()),okArea=area==='all'||meta.includes(area),okPrice=!max||!price||price<=max;card.style.display=okQ&&okCat&&okArea&&okPrice?'':'none';if(okQ&&okCat&&okArea&&okPrice)visible++});
+  main.querySelectorAll('[data-vendor]').forEach(card=>{const text=card.textContent.toLowerCase(),meta=card.querySelector('.meta')?.textContent||'',priceText=[...card.querySelectorAll('b')].find(el=>/^Rp/.test(el.textContent.trim()))?.textContent||'',price=Number(priceText.replace(/\D/g,''))||mbVendorPrice(card.dataset.vendor);const okQ=!q||text.includes(q),okCat=cat==='all'||text.includes(cat.toLowerCase()),okArea=area==='all'||meta.includes(area),okPrice=!max||price<=max;card.style.display=okQ&&okCat&&okArea&&okPrice?'':'none';if(okQ&&okCat&&okArea&&okPrice)visible++});
   box.querySelector('#entegoResultCount').textContent=`${visible} mitra ditemukan`;
  };
  ['change','input'].forEach(evt=>{box.addEventListener(evt,e=>{if(['entegoFilterCat','entegoFilterArea','entegoFilterMax'].includes(e.target.id))apply()})});if(search)search.addEventListener('input',apply);
