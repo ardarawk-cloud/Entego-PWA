@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cp manifest.webmanifest sw.js icon-96.png icon-144.png icon-192.png icon-256.png icon-384.png icon-512.png icon-maskable-512.png apple-touch-icon.png logo-header.png dist/",
+    "build": "vite build && cp manifest.webmanifest sw.js icon-96.png icon-144.png icon-192.png icon-256.png icon-384.png icon-512.png icon-maskable-512.png apple-touch-icon.png logo-header.png cancel-flow.js final-flow.js reschedule-flow.js completion-flow.js ops-flow.js dist/",
     "preview": "vite preview"
   },
   "dependencies": {
