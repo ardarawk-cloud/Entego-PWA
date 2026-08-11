@@ -79,3 +79,15 @@ linear-gradient(135deg,#334155,#0f172a)}
   .premium-hero h1{font-size:27px}
   .quick-grid{grid-template-columns:1fr 1fr}
 }
+
+/* LOGO & PWA FIX v1.1 */
+.brand-logo{
+  width:44px!important;height:44px!important;min-width:44px!important;
+  border-radius:15px!important;background:transparent!important;
+  display:grid!important;place-items:center!important;overflow:hidden!important;
+  box-shadow:0 7px 18px rgba(249,115,22,.22)!important;
+}
+.brand-logo img{
+  width:44px!important;height:44px!important;display:block!important;
+  object-fit:contain!important;border-radius:15px!important;
+}

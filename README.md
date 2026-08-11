@@ -1,58 +1,18 @@
-# ENTEGO PWA — FINAL VISUAL v1.0
+# ENTEGO PWA LOGO FIX v1.1
 
-Full interactive visual prototype before backend integration.
-
-CUSTOMER
-- Home premium
-- 20 kategori layanan
-- Search / explore
-- Vendor detail
-- Booking
-- Checkout
-- Multi payment choice
-- Orders / tracking
-- Detail payment
-- Maps handoff
-- Chat
-- Favorites
-- Notifications
-- Wallet
-- Address
-- Voucher
-- Settings
-- Help / support
-
-PARTNER
-- Partner onboarding
-- Dashboard
-- Incoming order
-- Accept / reject
-- Customer chat
-- Start / complete work
-- Calendar
-- Packages / pricing
-- Portfolio
-- Reviews
-- Wallet / payout
-- Analytics
-
-ADMIN
-- Overview
-- Partner verification
-- Booking / dispute
-- Payment
-- Promo / banner
-- Users
-- Reports / analytics
-- CMS / categories
-
-PWA BRANDING
-- New ENTEGO app icon 192 / 512
-- Maskable icon
-- Apple touch icon
-- ENTEGO logo asset
-- Navy + orange premium visual system
+Perbaikan:
+- Logo header rusak/ENT dihapus.
+- Dedicated header logo PNG.
+- PWA icons 192/512 digenerate ulang.
+- Android maskable icon ditambahkan.
+- Apple touch icon ditambahkan.
+- Manifest dibangun ulang.
+- Cache icon dibump ke v11.
+- Service worker dibump ke entego-v11.
 
 Cloudflare:
 Build command: npm run build
 Deploy command: npx wrangler deploy
+
+Setelah deploy:
+Hapus shortcut/PWA ENTEGO lama dari HP, refresh situs, lalu Tambahkan ke Desktop lagi agar Android membaca icon baru.
