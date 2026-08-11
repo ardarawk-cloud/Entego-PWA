@@ -1,27 +1,8 @@
-# ENTEGO PWA FULL VISUAL v0.1
-
-Prototype visual lengkap sesuai Master Plan.
-
-## Customer
-Home, Explore, Detail Mitra, Booking, Checkout, Orders, Detail Order, Chat, Favorit, Notifikasi, Profil.
-
-## Partner
-Dashboard Mitra, order, statistik, kalender, harga, portofolio, wallet, analitik.
-
-## Admin
-Overview, verifikasi mitra, booking/dispute, pembayaran, promo/banner, users, report, CMS.
-
-## Cloudflare Pages
-Framework preset: Vite
-Build command: npm run build
-Build output directory: dist
-
-Data masih dummy untuk validasi struktur visual. Backend/API/payment/maps real masuk tahap berikutnya.
-
-
-## v0.2 — UI Polish
-- Floating CTA dipertahankan agar tombol aksi selalu mudah dijangkau.
-- Ruang bawah konten ditambah agar konten tidak tertutup tombol.
-- Safe area mobile ditingkatkan.
-- Blur dan shadow CTA diperhalus.
-- Feedback sentuh tombol/card ditambahkan.
+# ENTEGO PWA FULL INTERACTIVE v0.4
+Customer + Partner + Admin interactive visual prototype.
+Customer: discovery, vendor, booking, checkout, payments, orders, tracking, maps, chat, wallet, profile/support.
+Partner: onboarding, dashboard, incoming order, accept/reject, chat, start/complete job, calendar, packages, portfolio, reviews, wallet, analytics.
+Admin: overview, verification, booking/dispute, payments, promo, users, reports, CMS.
+Order state is synchronized locally for end-to-end prototype testing.
+Cloudflare build: npm run build
+Cloudflare deploy: npx wrangler deploy

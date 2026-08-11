@@ -21,3 +21,12 @@
 @supports not selector(:has(*)){
   .content{padding-bottom:170px}
 }
+
+.clickable{cursor:pointer}
+.mini{padding:8px 10px;font-size:12px}
+.pay-row + .pay-row{border-top:1px solid var(--line)}
+
+/* v0.4 polish */
+.clickable{cursor:pointer}.hero h1,.hero p,.hero small,.hero button{position:relative;z-index:2}
+input:focus,select:focus,textarea:focus{border-color:#fb923c!important;box-shadow:0 0 0 3px rgba(249,115,22,.10)}
+.topbar{padding-top:max(18px,env(safe-area-inset-top))}.bottom{padding-bottom:max(8px,env(safe-area-inset-bottom))}
