@@ -1,17 +1,23 @@
-# ENTEGO PWA STATIC ASSET FIX v1.2
+# ENTEGO PWA — FINAL BUILD v1.3
 
-Root cause fixed:
-Vite only bundled the app into dist. The flat-root PWA assets were not copied
-into dist, so the header logo and install icon could fall back/break.
+Status: PRODUCTION READY
 
-v1.2 copies manifest, service worker, all icons, Apple icon and header logo
-into dist after vite build.
+ENTEGO is a mobile-first Entertainment & Rental Marketplace PWA for Bali.
 
-Cloudflare:
+## Final flow
+- Customer: Home → Services/Search → Vendor → Booking → Checkout → Order → Detail/Chat
+- Partner: Onboarding → Dashboard → Orders → Accept/Reject → Chat → Start/Complete job → Wallet/Analytics
+- Admin demo: Partner verification → Booking/Dispute → Payments → Promo → Users → Reports → CMS
+- PWA: installable, standalone portrait mode, service worker, maskable icon, Apple icon, unified ENTEGO header branding
+
+## Build
+npm run build
+
+## Cloudflare
 Build command: npm run build
 Deploy command: npx wrangler deploy
 
-After deploy:
-- remove old installed ENTEGO shortcut once
-- reload ENTEGO
-- Add to Home Screen again
+## Release notes
+v1.3 locks the complete functional demo flow and final visual baseline. Interactive controls are wired through the app router/state. PWA assets are copied to dist during build.
+
+For an already-installed older PWA, remove the old shortcut/app once after deployment, reload the site, then install ENTEGO again so Android refreshes the icon/manifest.
