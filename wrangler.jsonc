@@ -1,12 +1,12 @@
 {
   "name":"entego-pwa",
-  "main":"./api-worker-v35.js",
+  "main":"./api-worker-v36.js",
   "compatibility_date":"2026-08-12",
   "assets":{
     "directory":"./dist",
     "binding":"ASSETS",
     "not_found_handling":"single-page-application",
-    "run_worker_first":["/api/*"]
+    "run_worker_first":["/api/*","/media/*"]
   },
   "durable_objects":{
     "bindings":[
