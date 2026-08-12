@@ -46,12 +46,17 @@ jobs:
           test -f dist/admin-route-integrity-flow.js
           test -f dist/portfolio-media-flow.js
           grep -q "auth-store-v2.js" api-worker-v50.js
-          grep -q '"main":"./api-worker-v58.js"' wrangler.jsonc
+          grep -q '"main":"./api-worker-v59.js"' wrangler.jsonc
           grep -q '"ENT_PRESENCE"' wrangler.jsonc
           grep -q '"ENT_ALERTS"' wrangler.jsonc
-          grep -q "action-center-flow.js?v=58" index.html
-          grep -q "privacy-center-flow.js?v=58" index.html
-          grep -q "production-truth-gate-flow.js?v=58" index.html
+          grep -q "action-center-flow.js?v=59" index.html
+          grep -q "privacy-center-flow.js?v=59" index.html
+          grep -q "production-truth-gate-flow.js?v=59" index.html
+          grep -q 'id="entegoBootShield"' index.html
+          grep -q 'id="app" style="visibility:hidden"' index.html
+          grep -q "function ptgReveal" production-truth-gate-flow.js
+          grep -q "'notifications'" action-center-flow.js
+          grep -q "notificationCenter:'action-center-full-route'" api-worker-v59.js
           grep -q "productionTruth:'fail-closed'" api-worker-v57.js
           grep -q "eventTimeGuard:'wita-future-only'" api-worker-v58.js
           grep -q "service_start_event_date_only" payment-state-guard-flow.js
