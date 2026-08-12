@@ -7,16 +7,18 @@ const unhex = value => new Uint8Array((String(value).match(/.{1,2}/g) || []).map
 const randomHex = (n = 32) => { const b = new Uint8Array(n); crypto.getRandomValues(b); return hex(b); };
 const sha256Hex = async value => hex(new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(String(value)))));
 const publicUser = row => row ? ({id:row.id,email:row.email,displayName:row.display_name,role:row.role,status:row.status,verified:Boolean(row.verified),createdAt:row.created_at}) : null;
+const DUMMY_SALT='d4a956ba3fe05dcf71c1bdb319266c9a';
 
 async function passwordHash(password, saltHex) {
-  const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const key = await crypto.subtle.importKey("raw", enc.encode(String(password).slice(0,128)), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits({name:"PBKDF2",salt:unhex(saltHex),iterations:210000,hash:"SHA-256"}, key, 256);
   return hex(new Uint8Array(bits));
 }
 async function safeHexEqual(a, b) {
   const aa = unhex(a), bb = unhex(b);
   if (!aa.length || aa.length !== bb.length) return false;
-  return crypto.subtle.timingSafeEqual ? crypto.subtle.timingSafeEqual(aa, bb) : a === b;
+  if(crypto.subtle.timingSafeEqual)return crypto.subtle.timingSafeEqual(aa,bb);
+  let diff=0;for(let i=0;i<aa.length;i++)diff|=aa[i]^bb[i];return diff===0;
 }
 
 export class EntegoAuth extends DurableObject {
@@ -50,12 +52,22 @@ export class EntegoAuth extends DurableObject {
         created_at TEXT NOT NULL,
         PRIMARY KEY (booking_id,user_id)
       );
+      CREATE TABLE IF NOT EXISTS rate_limits (
+        bucket TEXT PRIMARY KEY,
+        hits INTEGER NOT NULL DEFAULT 0,
+        reset_at INTEGER NOT NULL,
+        updated_at TEXT NOT NULL
+      );
       CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
       CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON sessions(expires_at);
       CREATE INDEX IF NOT EXISTS idx_booking_access_user ON booking_access(user_id);
       CREATE INDEX IF NOT EXISTS idx_users_role_verified ON users(role,verified);
+      CREATE INDEX IF NOT EXISTS idx_rate_limit_reset ON rate_limits(reset_at);
     `);
   }
+
+  async consumeRateLimit(scope,key,limit,windowSeconds){const safeLimit=Math.max(1,Math.min(1000,Number(limit)||1)),window=Math.max(1,Math.min(86400,Number(windowSeconds)||60)),bucket=await sha256Hex(`${clean(scope,80)}:${String(key||'unknown').slice(0,300)}`),now=Date.now();this.sql.exec(`DELETE FROM rate_limits WHERE reset_at<?`,now);const row=this.sql.exec(`SELECT hits,reset_at FROM rate_limits WHERE bucket=? LIMIT 1`,bucket).toArray()[0];if(!row||Number(row.reset_at)<=now){const reset=now+window*1000;this.sql.exec(`INSERT INTO rate_limits(bucket,hits,reset_at,updated_at) VALUES(?,1,?,?) ON CONFLICT(bucket) DO UPDATE SET hits=1,reset_at=excluded.reset_at,updated_at=excluded.updated_at`,bucket,reset,new Date().toISOString());return {ok:true,remaining:safeLimit-1,retryAfter:window}}if(Number(row.hits)>=safeLimit)return {ok:false,remaining:0,retryAfter:Math.max(1,Math.ceil((Number(row.reset_at)-now)/1000))};this.sql.exec(`UPDATE rate_limits SET hits=hits+1,updated_at=? WHERE bucket=?`,new Date().toISOString(),bucket);return {ok:true,remaining:Math.max(0,safeLimit-Number(row.hits)-1),retryAfter:Math.max(1,Math.ceil((Number(row.reset_at)-now)/1000))}}
+  async resetRateLimit(scope,key){const bucket=await sha256Hex(`${clean(scope,80)}:${String(key||'unknown').slice(0,300)}`);this.sql.exec(`DELETE FROM rate_limits WHERE bucket=?`,bucket);return true}
 
   async createSession(userId, userAgent = "") {
     const rawToken = randomHex(32);
@@ -91,7 +103,7 @@ export class EntegoAuth extends DurableObject {
     const email = clean(input.email, 160).toLowerCase();
     const password = String(input.password || "");
     const row = this.sql.exec(`SELECT * FROM users WHERE email = ? LIMIT 1`, email).toArray()[0];
-    if (!row || row.status !== "active") throw new Error("INVALID_CREDENTIALS");
+    if (!row || row.status !== "active" || password.length<1 || password.length>128){await passwordHash(password,DUMMY_SALT);throw new Error("INVALID_CREDENTIALS")}
     const hash = await passwordHash(password, row.password_salt);
     if (!(await safeHexEqual(hash, row.password_hash))) throw new Error("INVALID_CREDENTIALS");
     const session = await this.createSession(row.id, userAgent);
@@ -111,11 +123,15 @@ export class EntegoAuth extends DurableObject {
     return publicUser(row);
   }
 
+  async listSessions(userId,currentRawToken=''){const uid=clean(userId,100),currentHash=currentRawToken?await sha256Hex(currentRawToken):'';this.sql.exec(`DELETE FROM sessions WHERE expires_at<=?`,new Date().toISOString());return this.sql.exec(`SELECT token_hash,expires_at,created_at,user_agent FROM sessions WHERE user_id=? ORDER BY created_at DESC`,uid).toArray().map(r=>({id:r.token_hash.slice(0,16),expiresAt:r.expires_at,createdAt:r.created_at,userAgent:r.user_agent,current:r.token_hash===currentHash}))}
+  async revokeSession(userId,sessionId){const uid=clean(userId,100),sid=clean(sessionId,32);if(!uid||sid.length<8)return false;this.sql.exec(`DELETE FROM sessions WHERE user_id=? AND substr(token_hash,1,?)=?`,sid.length,uid,sid);return true}
+  async revokeOtherSessions(userId,currentRawToken){const uid=clean(userId,100),currentHash=currentRawToken?await sha256Hex(currentRawToken):'';if(!currentHash)return false;this.sql.exec(`DELETE FROM sessions WHERE user_id=? AND token_hash<>?`,uid,currentHash);return true}
   async logout(rawToken) {
     if (!rawToken) return true;
     this.sql.exec(`DELETE FROM sessions WHERE token_hash = ?`, await sha256Hex(rawToken));
     return true;
   }
+  async logoutAll(userId){this.sql.exec(`DELETE FROM sessions WHERE user_id=?`,clean(userId,100));return true}
 
   async bindBooking(userId, bookingId, accessRole = "customer") {
     const uid=clean(userId,100),bid=clean(bookingId,120),role=clean(accessRole,20);
