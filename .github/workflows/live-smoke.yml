@@ -11,46 +11,40 @@ permissions:
 jobs:
   probe-production:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
       EXPECTED_CACHE: entego-v69
       EXPECTED_INDEX_MARKER: entego_sw69_takeover
     steps:
-      - name: Wait for v69 service worker marker
+      - name: Wait for complete v69 production state
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in $(seq 1 12); do
+          for attempt in $(seq 1 18); do
+            index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/" 2>/dev/null || true)"
             sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js" 2>/dev/null || true)"
-            if grep -q "$EXPECTED_CACHE" <<<"$sw"; then
-              echo "Production service worker exposes $EXPECTED_CACHE"
+            truth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/production-truth-gate-flow.js?v=69" 2>/dev/null || true)"
+            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=69" 2>/dev/null || true)"
+            if grep -q "$EXPECTED_INDEX_MARKER" <<<"$index" \
+              && grep -q 'sanitizeHomeFallback' <<<"$index" \
+              && grep -q 'Memulihkan tampilan ENTEGO' <<<"$index" \
+              && grep -q 'production-truth-gate-flow.js?v=69' <<<"$index" \
+              && grep -q "$EXPECTED_CACHE" <<<"$sw" \
+              && grep -q 'entego-directory-v68' <<<"$sw" \
+              && grep -q 'production-truth-gate-flow.js?v=69' <<<"$sw" \
+              && grep -q 'route-loader-flow.js?v=69' <<<"$sw" \
+              && grep -q 'url.pathname==="/api/directory"' <<<"$sw" \
+              && grep -q 'ptgReveal' <<<"$truth" \
+              && grep -q "RL_VERSION='69'" <<<"$loader"; then
+              echo "Production exposes complete ENTEGO v69 boot recovery state"
               exit 0
             fi
-            echo "Attempt $attempt/12: v69 service-worker marker not visible yet"
+            echo "Attempt $attempt/18: production v69 assets are still converging"
             sleep 5
           done
-          echo "Production did not expose $EXPECTED_CACHE within the probe window"
+          echo "Production did not converge to complete ENTEGO v69 within the probe window"
           exit 1
-
-      - name: Verify production shell and boot recovery
-        shell: bash
-        run: |
-          set -euo pipefail
-          index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/")"
-          sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js")"
-          grep -q "$EXPECTED_INDEX_MARKER" <<<"$index"
-          grep -q 'sanitizeHomeFallback' <<<"$index"
-          grep -q 'Memulihkan tampilan ENTEGO' <<<"$index"
-          grep -q 'production-truth-gate-flow.js?v=69' <<<"$index"
-          grep -q "$EXPECTED_CACHE" <<<"$sw"
-          grep -q 'entego-directory-v68' <<<"$sw"
-          grep -q 'production-truth-gate-flow.js?v=69' <<<"$sw"
-          grep -q 'route-loader-flow.js?v=69' <<<"$sw"
-          grep -q 'url.pathname==="/api/directory"' <<<"$sw"
-          curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/production-truth-gate-flow.js?v=69" | grep -q 'ptgReveal'
-          curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=69" | grep -q "RL_VERSION='69'"
-          echo "Production exposes v69 boot recovery and critical boot modules"
 
       - name: Wait for directory timing instrumentation
         shell: bash
