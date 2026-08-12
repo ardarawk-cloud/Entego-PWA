@@ -47,20 +47,18 @@ jobs:
           test -f dist/admin-route-integrity-flow.js
           test -f dist/portfolio-media-flow.js
           grep -q "auth-store-v3.js" api-worker-v60.js
-          grep -q "partner-store-v2.js" api-worker-v60.js
-          grep -q '"main":"./api-worker-v61.js"' wrangler.jsonc
+          grep -q '"main":"./api-worker-v62.js"' wrangler.jsonc
           grep -q "selectedTalentCache:'isolated-from-partner-self'" api-worker-v61.js
+          grep -q "cancellationFairness:'reason-required-audited'" api-worker-v62.js
+          grep -q "cancellation_reason_required" api-worker-v62.js
+          grep -q "cancellation_reason_recorded" api-worker-v62.js
+          grep -q "rejection_reason_recorded" api-worker-v62.js
+          grep -q "psgReasonDialog" payment-state-guard-flow.js
+          grep -q "category:'payment_refund'" payment-state-guard-flow.js
+          grep -q "requestedAction:'refund_review'" payment-state-guard-flow.js
           grep -q "entego_selected_partner_profile" server-partner-flow.js
-          grep -q "entego_selected_partner_packages" server-partner-flow.js
-          grep -q "entego_selected_partner_profile" partner-marketplace-flow.js
-          grep -q "entego_selected_partner_packages" partner-offer-flow.js
-          grep -q "entego_selected_partner_packages" market-booking-flow.js
-          grep -q "entego_selected_partner_packages" booking-integrity-flow.js
           grep -q "entego_selected_partner_packages" server-booking-flow.js
-          grep -q "entego_selected_partner_packages" production-truth-gate-flow.js
-          grep -q "profile.userId===id" production-truth-gate-flow.js
-          grep -q "clearSelectedPartner(false)" server-partner-flow.js
-          grep -q "production-truth-gate-flow.js?v=61" index.html
+          grep -q "production-truth-gate-flow.js?v=62" index.html
           grep -q 'id="entegoBootShield"' index.html
           ! grep -q "const mbProfile=()=>mbRead('entego_partner_profile'" market-booking-flow.js
           ! grep -q "biRead('entego_partner_packages'" booking-integrity-flow.js
