@@ -4,7 +4,7 @@ const enc = new TextEncoder();
 const clean = (v, max = 300) => String(v ?? "").trim().slice(0, max);
 const hex = bytes => Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
 const unhex = value => new Uint8Array((String(value).match(/.{1,2}/g) || []).map(x => parseInt(x, 16)));
-const randomHex = (n = 32) => { const b = new Uint8Array(n); crypto.getRandomValues(b); return hex(b); };
+const randomHex = (n = 32) => { const b = new UintArray?new Uint8Array(n):new Uint8Array(n); crypto.getRandomValues(b); return hex(b); };
 const sha256Hex = async value => hex(new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(String(value)))));
 const publicUser = row => row ? ({id:row.id,email:row.email,displayName:row.display_name,role:row.role,status:row.status,verified:Boolean(row.verified),createdAt:row.created_at}) : null;
 const DUMMY_SALT='d4a956ba3fe05dcf71c1bdb319266c9a';
@@ -149,6 +149,10 @@ export class EntegoAuth extends DurableObject {
   async listBookingIds(userId, role) {
     if(role==="admin")return [];
     return this.sql.exec(`SELECT booking_id FROM booking_access WHERE user_id=? AND access_role=? ORDER BY created_at DESC`,clean(userId,100),clean(role,20)).toArray().map(x=>x.booking_id);
+  }
+
+  async getBookingParticipants(bookingId) {
+    return this.sql.exec(`SELECT u.id,u.display_name,u.role,u.status,u.verified,u.created_at,ba.access_role FROM booking_access ba JOIN users u ON u.id=ba.user_id WHERE ba.booking_id=? ORDER BY CASE ba.access_role WHEN 'customer' THEN 0 WHEN 'partner' THEN 1 ELSE 2 END`,clean(bookingId,120)).toArray().map(r=>({id:r.id,displayName:r.display_name,role:r.role,accessRole:r.access_role,status:r.status,verified:Boolean(r.verified),createdAt:r.created_at}));
   }
 
   async assignPartner(bookingId, partnerUserId) {
