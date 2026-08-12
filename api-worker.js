@@ -18,7 +18,7 @@ async function paymentGate(env,bookingId,status){const payment=await paymentStor
 
 async function handleProtected(request,env){
  const url=new URL(request.url),path=url.pathname,method=request.method;
- if(path==='/api/health')return json({ok:true,service:'entego-api',storage:'durable-object-sqlite',auth:'role-session-cookie',payment:'xendit-payment-session',partnerDirectory:'server-managed',reconciliation:'strict',adminPayment:'server-managed',version:'v33'});
+ if(path==='/api/health')return json({ok:true,service:'entego-api',storage:'durable-object-sqlite',auth:'role-session-cookie',payment:'xendit-payment-session',partnerDirectory:'server-managed',reviews:'server-managed',reconciliation:'strict',adminPayment:'server-managed',version:'v33'});
  if(!path.startsWith('/api/'))return null;if(path.startsWith('/api/auth/'))return null;
  const user=await requireUser(request,env);if(!user)return json({ok:false,error:'unauthenticated'},401);
  const partner=await handlePartnerApi(request,env,user);if(partner)return partner;
@@ -38,7 +38,7 @@ async function handleProtected(request,env){
   if(isBase&&method==='GET')return bookingWorker.fetch(request,env);
   if(isBase&&method==='PATCH'){const body=await request.clone().json().catch(()=>({})),status=String(body.status||'');if(user.role==='customer'&&status!=='dibatalkan')return json({ok:false,error:'forbidden_status_change'},403);if(user.role==='partner'&&!['diterima','ditolak','berlangsung','selesai'].includes(status))return json({ok:false,error:'forbidden_status_change'},403);const gate=await paymentGate(env,id,status);if(!gate.ok)return json({ok:false,...gate},409);return bookingWorker.fetch(request,env)}
   if(isReschedule){if(method==='GET')return bookingWorker.fetch(request,env);if(method==='POST'&&['customer','admin'].includes(user.role))return bookingWorker.fetch(request,env);if(method==='PATCH'){const body=await request.clone().json().catch(()=>({})),action=String(body.action||'');if(user.role==='customer'&&action!=='cancel')return json({ok:false,error:'forbidden_reschedule_action'},403);if(user.role==='partner'&&!['approve','reject'].includes(action))return json({ok:false,error:'forbidden_reschedule_action'},403);return bookingWorker.fetch(request,env)}}
-  if(isReview){if(method==='GET')return bookingWorker.fetch(request,env);if(method==='POST'&&['customer','admin'].includes(user.role))return bookingWorker.fetch(request,env);return json({ok:false,error:'forbidden_review_action'},403)}
+  if(isReview){if(method==='GET')return bookingWorker.fetch(request,env);if(method==='POST'&&['customer','admin'].includes(user.role)){const booking=await bookingStore(env).getBooking(id);if(!booking||booking.status!=='selesai')return json({ok:false,error:'booking_not_completed'},409);return bookingWorker.fetch(request,env)}return json({ok:false,error:'forbidden_review_action'},403)}
  }
  const assign=path.match(/^\/api\/admin\/bookings\/([^/]+)\/assign-partner$/);if(assign&&method==='POST'){if(user.role!=='admin')return json({ok:false,error:'admin_required'},403);const body=await request.json();const ok=await authStore(env).assignPartner(decodeURIComponent(assign[1]),body.partnerUserId);return ok?json({ok:true}):json({ok:false,error:'partner_not_found'},404)}
  return bookingWorker.fetch(request,env);
