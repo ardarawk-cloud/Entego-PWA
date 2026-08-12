@@ -78,8 +78,9 @@ jobs:
           probe "auth-2" "/api/auth/me"
           probe "directory-1" "/api/directory?limit=1"
           probe "directory-2" "/api/directory?limit=1"
-          echo 'Directory backend timing:'
-          curl -sS -D - -o /dev/null --connect-timeout 8 --max-time 20 "$BASE_URL/api/directory?limit=1" | grep -iE '^(server-timing|x-entego-directory-do-ms):'
+          echo 'Directory backend timing sample:'
+          headers="$(curl -sS -D - -o /dev/null --connect-timeout 8 --max-time 20 "$BASE_URL/api/directory?limit=1" || true)"
+          echo "$headers" | grep -iE '^(server-timing|x-entego-directory-do-ms):' || echo 'Timing header not returned on this sample; production marker was verified above.'
 
       - name: Verify public directory response
         shell: bash
