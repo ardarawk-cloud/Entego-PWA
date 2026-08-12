@@ -46,13 +46,16 @@ jobs:
           test -f dist/admin-route-integrity-flow.js
           test -f dist/portfolio-media-flow.js
           grep -q "auth-store-v2.js" api-worker-v50.js
-          grep -q '"main":"./api-worker-v57.js"' wrangler.jsonc
+          grep -q '"main":"./api-worker-v58.js"' wrangler.jsonc
           grep -q '"ENT_PRESENCE"' wrangler.jsonc
           grep -q '"ENT_ALERTS"' wrangler.jsonc
-          grep -q "action-center-flow.js?v=57" index.html
-          grep -q "privacy-center-flow.js?v=57" index.html
-          grep -q "production-truth-gate-flow.js?v=57" index.html
+          grep -q "action-center-flow.js?v=58" index.html
+          grep -q "privacy-center-flow.js?v=58" index.html
+          grep -q "production-truth-gate-flow.js?v=58" index.html
           grep -q "productionTruth:'fail-closed'" api-worker-v57.js
+          grep -q "eventTimeGuard:'wita-future-only'" api-worker-v58.js
+          grep -q "service_start_event_date_only" payment-state-guard-flow.js
+          grep -q "category:'payment_refund'" payment-state-guard-flow.js
           ! grep -q "cancel-flow.js" index.html
           ! grep -q "promo=150000" market-booking-flow.js
           ! grep -q "promo=150000" partner-offer-flow.js
