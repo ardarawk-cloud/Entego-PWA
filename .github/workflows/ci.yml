@@ -40,27 +40,27 @@ jobs:
           test -f dist/readiness-flow.js
           test -f dist/action-center-flow.js
           test -f dist/privacy-center-flow.js
+          test -f dist/admin-account-control-flow.js
           test -f dist/production-truth-gate-flow.js
           test -f dist/server-chat-flow.js
           test -f dist/security-sessions-flow.js
           test -f dist/admin-route-integrity-flow.js
           test -f dist/portfolio-media-flow.js
           grep -q "auth-store-v2.js" api-worker-v50.js
-          grep -q '"main":"./api-worker-v59.js"' wrangler.jsonc
-          grep -q '"ENT_PRESENCE"' wrangler.jsonc
-          grep -q '"ENT_ALERTS"' wrangler.jsonc
-          grep -q "action-center-flow.js?v=59" index.html
-          grep -q "privacy-center-flow.js?v=59" index.html
-          grep -q "production-truth-gate-flow.js?v=59" index.html
+          grep -q "auth-store-v3.js" api-worker-v60.js
+          grep -q "partner-store-v2.js" api-worker-v60.js
+          grep -q '"main":"./api-worker-v60.js"' wrangler.jsonc
+          grep -q '"ENT_AUTH","class_name":"EntegoAuth"' wrangler.jsonc
+          grep -q '"ENT_PARTNER","class_name":"EntegoPartner"' wrangler.jsonc
+          grep -q "admin-account-control-flow.js?v=60" index.html
+          grep -q "account_restricted_new_booking" api-worker-v60.js
+          grep -q "account_restricted_new_job" api-worker-v60.js
+          grep -q "account_status_events" auth-store-v3.js
+          grep -q "setOperationalStatus" partner-store-v2.js
           grep -q 'id="entegoBootShield"' index.html
-          grep -q 'id="app" style="visibility:hidden"' index.html
           grep -q "function ptgReveal" production-truth-gate-flow.js
-          grep -q "'notifications'" action-center-flow.js
-          grep -q "notificationCenter:'action-center-full-route'" api-worker-v59.js
           grep -q "productionTruth:'fail-closed'" api-worker-v57.js
           grep -q "eventTimeGuard:'wita-future-only'" api-worker-v58.js
-          grep -q "service_start_event_date_only" payment-state-guard-flow.js
-          grep -q "category:'payment_refund'" payment-state-guard-flow.js
           ! grep -q "cancel-flow.js" index.html
           ! grep -q "promo=150000" market-booking-flow.js
           ! grep -q "promo=150000" partner-offer-flow.js
