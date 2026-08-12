@@ -10,14 +10,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ENTEGO" />
   <title>ENTEGO</title>
-  <link rel="manifest" href="/manifest.webmanifest?v=70"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=70"><link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=70"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=70">
+  <link rel="manifest" href="/manifest.webmanifest?v=71"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=71"><link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=71"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=71">
   <style>#entegoBootShield{position:fixed;inset:0;z-index:99999;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .1s ease}#entegoBootShield .boot-inner{width:min(86vw,340px);text-align:center}#entegoBootShield img{width:72px;height:72px;object-fit:contain;border-radius:18px;margin-bottom:14px}#entegoBootShield b{display:block;font-size:23px;letter-spacing:.08em}#entegoBootShield span{display:block;margin-top:8px;font-size:13px;line-height:1.5;opacity:.75}</style>
 </head>
 <body>
-  <div id="entegoBootShield"><div class="boot-inner"><img src="/logo-header.png?v=70" alt="ENTEGO"><b>ENTEGO</b><span id="entegoBootText">Menyiapkan ENTEGO…</span></div></div><div id="app" style="visibility:hidden"></div>
+  <div id="entegoBootShield"><div class="boot-inner"><img src="/logo-header.png?v=71" alt="ENTEGO"><b>ENTEGO</b><span id="entegoBootText">Menyiapkan ENTEGO…</span></div></div><div id="app" style="visibility:hidden"></div>
   <script>
     (()=>{
-      const ENTEGO_BOOT_VERSION='70';
+      const ENTEGO_BOOT_VERSION='71';
       const app=()=>document.getElementById('app');
       const shield=()=>document.getElementById('entegoBootShield');
       const text=()=>document.getElementById('entegoBootText');
@@ -28,14 +28,13 @@
       let ticks=0;
       const watchdog=setInterval(()=>{const s=shield();if(!s){clearInterval(watchdog);return}const a=app(),route=storageGet('entego_route','home');if(a?.childElementCount&&route==='home'&&sanitizeHomeFallback()){clearInterval(watchdog);reveal();return}ticks+=1;if(ticks===12){const x=text();if(x)x.textContent='Memulihkan tampilan ENTEGO…'}if(ticks>=30){clearInterval(watchdog);if(route!=='home'){storageSet('entego_route','home');location.replace('/?recover='+ENTEGO_BOOT_VERSION);return}if(a?.childElementCount&&sanitizeHomeFallback()){reveal();return}const x=text();if(x)x.textContent='Memuat ulang ENTEGO…';setTimeout(()=>location.replace('/?recover='+ENTEGO_BOOT_VERSION),250)}},100);
       if('serviceWorker' in navigator){
-        let controllerReloading=false;
-        navigator.serviceWorker.addEventListener('controllerchange',()=>{if(controllerReloading)return;controllerReloading=true;location.reload()});
+        navigator.serviceWorker.addEventListener('controllerchange',()=>{const x=text();if(x)x.textContent='Memasang pembaruan ENTEGO…'});
         navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})})}).catch(()=>{});
       }
     })();
   </script>
   <script type="module" src="/main.js"></script>
-  <script type="module" src="/production-truth-gate-flow.js?v=70"></script>
-  <script type="module" src="/production-guard-flow.js?v=70"></script>
-  <script type="module" src="/route-loader-flow.js?v=70"></script>
+  <script type="module" src="/production-truth-gate-flow.js?v=71"></script>
+  <script type="module" src="/production-guard-flow.js?v=71"></script>
+  <script type="module" src="/route-loader-flow.js?v=71"></script>
 </body></html>
