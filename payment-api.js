@@ -22,6 +22,9 @@ async function refreshExisting(env,row){
    const event=d.status==='COMPLETED'?'payment_session.completed':'payment_session.expired';
    const result=await paymentStore(env).applySessionEvent(d,event);if(result?.ok)return result.payment;
   }
+  if(d.status==='CANCELED'){
+   return paymentStore(env).saveSession({bookingId:row.booking_id,sessionId:d.payment_session_id,referenceId:d.reference_id,amount:d.amount,currency:d.currency,status:'CANCELED',paymentLinkUrl:d.payment_link_url||row.payment_link_url,paymentId:d.payment_id||'',paymentRequestId:d.payment_request_id||''});
+  }
   if(d.status==='ACTIVE'&&d.payment_link_url&&d.payment_link_url!==row.payment_link_url){
    return paymentStore(env).saveSession({bookingId:row.booking_id,sessionId:d.payment_session_id,referenceId:d.reference_id,amount:d.amount,currency:d.currency,status:d.status,paymentLinkUrl:d.payment_link_url,paymentId:d.payment_id||'',paymentRequestId:d.payment_request_id||''});
   }
@@ -51,14 +54,15 @@ async function createSession(request,env,user){
 async function paymentStatus(request,env,user){
  const url=new URL(request.url),bookingId=clean(url.searchParams.get('bookingId'),120);if(!(await canAccess(user,env,bookingId)))return json({ok:false,error:'forbidden'},403);
  let row=await paymentStore(env).getByBooking(bookingId);if(row&&configured(env))row=await refreshExisting(env,row);
- const refund=await paymentStore(env).getRefund(bookingId);
- return json({ok:true,payment:publicPayment(row),refund:refund?{id:refund.refund_id||null,status:refund.status,amount:refund.amount,currency:refund.currency,reason:refund.reason}:null});
+ const [refund,audit]=await Promise.all([paymentStore(env).getRefund(bookingId),paymentStore(env).auditBooking(bookingId)]);
+ return json({ok:true,payment:publicPayment(row),refund:refund?{id:refund.refund_id||null,status:refund.status,amount:refund.amount,currency:refund.currency,reason:refund.reason}:null,audit:{paymentAttemptCount:audit.paymentAttemptCount,completedPaymentCount:audit.completedPaymentCount,refundAttemptCount:audit.refundAttemptCount,duplicatePayment:audit.duplicatePayment},attention:audit.duplicatePayment?'duplicate_payment_detected':null});
 }
 
 async function createRefund(request,env,user){
  if(!configured(env))return json({ok:false,error:'payment_not_configured'},503);
  if(user?.role!=='admin')return json({ok:false,error:'admin_required'},403);
  const body=await request.json().catch(()=>({})),bookingId=clean(body.bookingId,120);const booking=await bookingStore(env).getBooking(bookingId);if(!booking)return json({ok:false,error:'booking_not_found'},404);
+ const audit=await paymentStore(env).auditBooking(bookingId);if(audit.duplicatePayment)return json({ok:false,error:'duplicate_payment_manual_review',completedPaymentCount:audit.completedPaymentCount},409);
  let payment=await paymentStore(env).getByBooking(bookingId);payment=await refreshExisting(env,payment);
  if(!payment||payment.status!=='COMPLETED'||!payment.payment_request_id)return json({ok:false,error:'payment_not_refundable'},409);
  const existing=await paymentStore(env).getRefund(bookingId);if(existing&&['PENDING','SUCCEEDED'].includes(existing.status))return json({ok:true,refund:existing,reused:true});
@@ -91,7 +95,7 @@ async function webhook(request,env){
 export async function handlePaymentApi(request,env,user){
  const url=new URL(request.url),path=url.pathname;
  if((path==='/api/webhooks/xendit/payment-session'||path==='/api/webhooks/xendit')&&request.method==='POST')return webhook(request,env);
- if(path==='/api/payments/config'&&request.method==='GET')return json({ok:true,provider:'xendit',configured:configured(env),mode:'payment_session',refunds:true,reconciliation:'terminal-safe'});
+ if(path==='/api/payments/config'&&request.method==='GET')return json({ok:true,provider:'xendit',configured:configured(env),mode:'payment_session',refunds:true,reconciliation:'attempt-history-terminal-safe'});
  if(!user)return json({ok:false,error:'unauthenticated'},401);
  if(path==='/api/payments/session'&&request.method==='POST')return createSession(request,env,user);
  if(path==='/api/payments/status'&&request.method==='GET')return paymentStatus(request,env,user);
