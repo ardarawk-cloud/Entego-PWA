@@ -11,7 +11,7 @@ permissions:
 jobs:
   probe-production:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 5
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
       EXPECTED_CACHE: entego-v67
@@ -43,6 +43,22 @@ jobs:
           grep -q "$EXPECTED_CACHE" <<<"$sw"
           echo "Production shell markers match v67"
 
+      - name: Wait for directory timing instrumentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            headers="$(curl -sS -D - -o /dev/null --connect-timeout 8 --max-time 20 "$BASE_URL/api/directory?limit=1" 2>/dev/null || true)"
+            if grep -qi '^server-timing: entego_partner_do;dur=' <<<"$headers"; then
+              echo "$headers" | grep -iE '^(server-timing|x-entego-directory-do-ms):'
+              exit 0
+            fi
+            echo "Attempt $attempt/12: directory timing header not visible yet"
+            sleep 5
+          done
+          echo "Production did not expose ENTEGO directory timing instrumentation within the probe window"
+          exit 1
+
       - name: Measure live endpoint latency
         shell: bash
         run: |
@@ -62,6 +78,8 @@ jobs:
           probe "auth-2" "/api/auth/me"
           probe "directory-1" "/api/directory?limit=1"
           probe "directory-2" "/api/directory?limit=1"
+          echo 'Directory backend timing:'
+          curl -sS -D - -o /dev/null --connect-timeout 8 --max-time 20 "$BASE_URL/api/directory?limit=1" | grep -iE '^(server-timing|x-entego-directory-do-ms):'
 
       - name: Verify public directory response
         shell: bash
