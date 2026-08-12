@@ -36,10 +36,14 @@ jobs:
           test -f dist/sw.js
           test -f dist/trust-flow.js
           test -f dist/trust-center-flow.js
+          test -f dist/participants-flow.js
           test -f dist/server-chat-flow.js
           test -f dist/security-sessions-flow.js
           test -f dist/admin-route-integrity-flow.js
           test -f dist/portfolio-media-flow.js
+          grep -q "auth-store-v2.js" api-worker-v50.js
+          grep -q '"main":"./api-worker-v51.js"' wrangler.jsonc
+          ! grep -q "cancel-flow.js" index.html
 
       - name: Validate Cloudflare Worker bundle
         run: npx --yes wrangler@latest deploy --dry-run
