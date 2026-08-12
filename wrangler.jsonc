@@ -11,11 +11,13 @@
   "durable_objects":{
     "bindings":[
       {"name":"ENT_STORE","class_name":"EntegoStore"},
-      {"name":"ENT_AUTH","class_name":"EntegoAuth"}
+      {"name":"ENT_AUTH","class_name":"EntegoAuth"},
+      {"name":"ENT_PAY","class_name":"EntegoPayment"}
     ]
   },
   "exports":{
     "EntegoStore":{"type":"durable-object","storage":"sqlite"},
-    "EntegoAuth":{"type":"durable-object","storage":"sqlite"}
+    "EntegoAuth":{"type":"durable-object","storage":"sqlite"},
+    "EntegoPayment":{"type":"durable-object","storage":"sqlite"}
   }
 }
