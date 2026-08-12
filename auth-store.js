@@ -43,8 +43,16 @@ export class EntegoAuth extends DurableObject {
         created_at TEXT NOT NULL,
         user_agent TEXT NOT NULL DEFAULT ''
       );
+      CREATE TABLE IF NOT EXISTS booking_access (
+        booking_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        access_role TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (booking_id,user_id)
+      );
       CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
       CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON sessions(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_booking_access_user ON booking_access(user_id);
     `);
   }
 
@@ -106,6 +114,30 @@ export class EntegoAuth extends DurableObject {
     if (!rawToken) return true;
     this.sql.exec(`DELETE FROM sessions WHERE token_hash = ?`, await sha256Hex(rawToken));
     return true;
+  }
+
+  async bindBooking(userId, bookingId, accessRole = "customer") {
+    const uid=clean(userId,100),bid=clean(bookingId,120),role=clean(accessRole,20);
+    if(!uid||!bid||!["customer","partner"].includes(role))throw new Error("INVALID_BOOKING_ACCESS");
+    this.sql.exec(`INSERT INTO booking_access (booking_id,user_id,access_role,created_at) VALUES (?,?,?,?) ON CONFLICT(booking_id,user_id) DO UPDATE SET access_role=excluded.access_role`,bid,uid,role,new Date().toISOString());
+    return true;
+  }
+
+  async canAccessBooking(userId, role, bookingId) {
+    if(role==="admin")return true;
+    const row=this.sql.exec(`SELECT access_role FROM booking_access WHERE booking_id=? AND user_id=? LIMIT 1`,clean(bookingId,120),clean(userId,100)).toArray()[0];
+    return Boolean(row && row.access_role===role);
+  }
+
+  async listBookingIds(userId, role) {
+    if(role==="admin")return [];
+    return this.sql.exec(`SELECT booking_id FROM booking_access WHERE user_id=? AND access_role=? ORDER BY created_at DESC`,clean(userId,100),clean(role,20)).toArray().map(x=>x.booking_id);
+  }
+
+  async assignPartner(bookingId, partnerUserId) {
+    const user=await this.getUser(partnerUserId);
+    if(!user||user.role!=="partner")return false;
+    return this.bindBooking(user.id,bookingId,"partner");
   }
 
   async promoteAdmin(email) {
