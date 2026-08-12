@@ -38,6 +38,7 @@ jobs:
           test -f dist/production-truth-gate-flow.js
           test -f dist/production-guard-flow.js
           test -f dist/auth-flow.js
+          test -f dist/action-center-flow.js
           test -f dist/server-partner-flow.js
           test -f dist/server-booking-flow.js
           test -f dist/payment-flow.js
@@ -45,7 +46,7 @@ jobs:
           test -f dist/support-center-flow.js
           grep -q '"main":"./api-worker-v63.js"' wrangler.jsonc
           grep -q '"ENT_SUPPORT","class_name":"EntegoSupport"' wrangler.jsonc
-          grep -q "RL_VERSION='64'" route-loader-flow.js
+          grep -q "RL_VERSION='65'" route-loader-flow.js
           grep -q "CUSTOMER_MARKET" route-loader-flow.js
           grep -q "CUSTOMER_ORDER" route-loader-flow.js
           grep -q "PARTNER_BASE" route-loader-flow.js
@@ -53,17 +54,24 @@ jobs:
           grep -q "server-chat-flow.js" route-loader-flow.js
           grep -q "portfolio-media-flow.js" route-loader-flow.js
           grep -q "admin-verification-flow.js" route-loader-flow.js
-          grep -q "route-loader-flow.js?v=64" index.html
-          grep -q "production-truth-gate-flow.js?v=64" index.html
-          grep -q "production-guard-flow.js?v=64" index.html
+          grep -q "route-loader-flow.js?v=65" index.html
+          grep -q "production-truth-gate-flow.js?v=65" index.html
+          grep -q "production-guard-flow.js?v=65" index.html
           test "$(grep -o '<script type=\"module\" src=' index.html | wc -l)" -eq 4
           ! grep -q "import './server-chat-flow.js'" production-guard-flow.js
           ! grep -q "import './admin-verification-flow.js'" production-guard-flow.js
-          grep -q 'const CACHE="entego-v64"' sw.js
-          grep -q 'const SHELL=' sw.js
-          ! grep -q 'payment-flow.js?v=64' sw.js
-          ! grep -q 'admin-payment-flow.js?v=64' sw.js
+          grep -q 'const CACHE="entego-v65"' sw.js
+          grep -q 'cacheFirst' sw.js
+          grep -q 'staleWhileRevalidate' sw.js
+          grep -q 'request.mode==="navigate"' sw.js
+          ! grep -q 'payment-flow.js?v=65' sw.js
+          ! grep -q 'admin-payment-flow.js?v=65' sw.js
           ! grep -q 'portfolio-media-flow.js' sw.js
+          grep -q 'authRefreshPromise' auth-flow.js
+          grep -q 'requestIdleCallback' auth-flow.js
+          ! grep -q "window.addEventListener('load',async()=>{await authMe" auth-flow.js
+          ! grep -q "\['home','profile','notifications'" route-loader-flow.js
+          ! grep -q "\['home','orders','partner'" action-center-flow.js
           grep -q 'id="entegoBootShield"' index.html
           ! grep -q "cancel-flow.js" index.html
           ! grep -q "promo=150000" market-booking-flow.js
