@@ -12,9 +12,9 @@ async function authMe(){
 }
 async function authPost(path,body){
  const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:body?JSON.stringify(body):undefined});
- let d={};try{d=await r.json()}catch{};if(!r.ok||!d.ok)throw new Error(d.error||'request_failed');return d;
+ let d={};try{d=await r.json()}catch{};if(!r.ok||!d.ok){const e=new Error(d.error||'request_failed');e.retryAfter=Number(d.retryAfter||r.headers.get('retry-after')||0);throw e}return d;
 }
-function authMessage(code){return ({INVALID_EMAIL:'Email tidak valid.',INVALID_PASSWORD:'Password minimal 8 karakter.',DISPLAY_NAME_REQUIRED:'Nama wajib diisi.',EMAIL_EXISTS:'Email sudah terdaftar.',INVALID_CREDENTIALS:'Email atau password salah.',customer_role_required:'Gunakan akun Customer untuk membuat booking.'})[code]||'Proses belum berhasil. Periksa data lalu coba lagi.'}
+function authMessage(code,retryAfter=0){if(code==='rate_limited')return `Terlalu banyak percobaan. Coba lagi dalam ${Math.max(1,Math.ceil(Number(retryAfter||60)/60))} menit.`;return ({INVALID_EMAIL:'Email tidak valid.',INVALID_PASSWORD:'Password minimal 8 karakter.',DISPLAY_NAME_REQUIRED:'Nama wajib diisi.',EMAIL_EXISTS:'Email sudah terdaftar.',INVALID_CREDENTIALS:'Email atau password salah.',customer_role_required:'Gunakan akun Customer untuk membuat booking.'})[code]||'Proses belum berhasil. Periksa data lalu coba lagi.'}
 
 function authPanel(){
  if(authRoute()!=='profile')return;const main=document.querySelector('main.content');if(!main||document.querySelector('#entegoAuthPanel'))return;
@@ -28,7 +28,7 @@ function authPanel(){
  const login=box.querySelector('#authLoginForm'),reg=box.querySelector('#authRegisterForm'),lt=box.querySelector('#authLoginTab'),rt=box.querySelector('#authRegisterTab'),err=box.querySelector('#authError');
  const mode=m=>{const isLogin=m==='login';login.style.display=isLogin?'':'none';reg.style.display=isLogin?'none':'';lt.classList.toggle('active',isLogin);rt.classList.toggle('active',!isLogin);err.style.display='none'};lt.onclick=()=>mode('login');rt.onclick=()=>mode('register');
  const finish=user=>{authWrite(user);const after=localStorage.getItem(AUTH_AFTER_KEY);localStorage.removeItem(AUTH_AFTER_KEY);localStorage.setItem('entego_route',after||(user.role==='partner'?'partner':'profile'));location.reload()};
- const fail=e=>{err.textContent=authMessage(e.message);err.style.display='block'};
+ const fail=e=>{err.textContent=authMessage(e.message,e.retryAfter);err.style.display='block'};
  box.querySelector('#authLoginBtn').onclick=async()=>{const b=box.querySelector('#authLoginBtn');b.disabled=true;try{const d=await authPost('/api/auth/login',{email:box.querySelector('#authLoginEmail').value,password:box.querySelector('#authLoginPassword').value});finish(d.user)}catch(e){fail(e)}finally{b.disabled=false}};
  box.querySelector('#authRegisterBtn').onclick=async()=>{const b=box.querySelector('#authRegisterBtn');b.disabled=true;try{const d=await authPost('/api/auth/register',{displayName:box.querySelector('#authDisplayName').value,email:box.querySelector('#authRegisterEmail').value,password:box.querySelector('#authRegisterPassword').value,role:box.querySelector('#authRegisterRole').value});finish(d.user)}catch(e){fail(e)}finally{b.disabled=false}};
 }
