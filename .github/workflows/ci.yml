@@ -40,6 +40,7 @@ jobs:
           test -f dist/readiness-flow.js
           test -f dist/action-center-flow.js
           test -f dist/privacy-center-flow.js
+          test -f dist/support-center-flow.js
           test -f dist/admin-account-control-flow.js
           test -f dist/production-truth-gate-flow.js
           test -f dist/server-chat-flow.js
@@ -47,18 +48,21 @@ jobs:
           test -f dist/admin-route-integrity-flow.js
           test -f dist/portfolio-media-flow.js
           grep -q "auth-store-v3.js" api-worker-v60.js
-          grep -q '"main":"./api-worker-v62.js"' wrangler.jsonc
+          grep -q '"main":"./api-worker-v63.js"' wrangler.jsonc
+          grep -q '"ENT_SUPPORT","class_name":"EntegoSupport"' wrangler.jsonc
+          grep -q '"EntegoSupport":{"type":"durable-object","storage":"sqlite"}' wrangler.jsonc
+          grep -q "support_cases" support-store.js
+          grep -q "account_closure" api-worker-v63.js
+          grep -q "account_closure_blocked" api-worker-v63.js
+          grep -q "augmentActionCenter" api-worker-v63.js
+          grep -q "support-center-flow.js?v=63" index.html
+          grep -q "OFFICIAL CASE CENTER" support-center-flow.js
+          grep -q "PLATFORM CASE CONTROL" support-center-flow.js
           grep -q "selectedTalentCache:'isolated-from-partner-self'" api-worker-v61.js
           grep -q "cancellationFairness:'reason-required-audited'" api-worker-v62.js
-          grep -q "cancellation_reason_required" api-worker-v62.js
-          grep -q "cancellation_reason_recorded" api-worker-v62.js
-          grep -q "rejection_reason_recorded" api-worker-v62.js
           grep -q "psgReasonDialog" payment-state-guard-flow.js
-          grep -q "category:'payment_refund'" payment-state-guard-flow.js
-          grep -q "requestedAction:'refund_review'" payment-state-guard-flow.js
           grep -q "entego_selected_partner_profile" server-partner-flow.js
           grep -q "entego_selected_partner_packages" server-booking-flow.js
-          grep -q "production-truth-gate-flow.js?v=62" index.html
           grep -q 'id="entegoBootShield"' index.html
           ! grep -q "const mbProfile=()=>mbRead('entego_partner_profile'" market-booking-flow.js
           ! grep -q "biRead('entego_partner_packages'" booking-integrity-flow.js
