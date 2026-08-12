@@ -6,21 +6,22 @@ const payStatusLabel=s=>({ACTIVE:'Menunggu Pembayaran',COMPLETED:'Pembayaran Ber
 const refundLabel=s=>({PENDING:'Refund Diproses',SUCCEEDED:'Refund Berhasil',FAILED:'Refund Gagal',CANCELLED:'Refund Dibatalkan'})[s]||s;
 
 async function payJson(url,options){const r=await fetch(url,{cache:'no-store',headers:{accept:'application/json',...(options?.headers||{})},...options});let d={};try{d=await r.json()}catch{};return {r,d}}
-function normalizeLegacyLedger(done=false){const ledger=document.querySelector('#entegoServerLedger');if(!ledger)return;const title=ledger.querySelector('b');if(title)title.textContent='Booking Ledger';const pill=ledger.querySelector('.pill');if(pill){pill.classList.toggle('green',done);pill.classList.toggle('blue',!done);pill.textContent=done?'✓ Payment Verified by Xendit':'Booking Created • Payment Pending'}}
+function normalizeLegacyLedger(done=false,attention=false){const ledger=document.querySelector('#entegoServerLedger');if(!ledger)return;const title=ledger.querySelector('b');if(title)title.textContent='Booking Ledger';const pill=ledger.querySelector('.pill');if(pill){pill.classList.toggle('green',done&&!attention);pill.classList.toggle('blue',!done||attention);pill.textContent=attention?'⚠ Payment perlu review':done?'✓ Payment Verified by Xendit':'Booking Created • Payment Pending'}}
 
 async function renderPaymentCard(){
  if(payRoute()!=='orderdetail')return;const order=payRead(),main=document.querySelector('main.content');if(!order?.id||!main||document.querySelector('#entegoPaymentCard'))return;
  const card=document.createElement('section');card.id='entegoPaymentCard';card.className='card';card.innerHTML='<div class="kicker">PAYMENT</div><div class="meta">Memeriksa payment gateway…</div>';main.appendChild(card);
  try{
-  const cfg=await payJson('/api/payments/config');if(!cfg.r.ok||!cfg.d.ok)throw new Error('config');
   const status=await payJson(`/api/payments/status?bookingId=${encodeURIComponent(order.id)}`);if(!status.r.ok||!status.d.ok)throw new Error('status');
-  const p=status.d.payment,refund=status.d.refund;
-  if(!cfg.d.configured){normalizeLegacyLedger(false);card.innerHTML=`<div class="kicker">PAYMENT</div><h3 style="margin:6px 0">${payMoney(order.total)}</h3><span class="pill blue">Xendit Sandbox belum dikonfigurasi</span><p class="meta">Booking tersimpan aman. Pembayaran akan aktif setelah secret Xendit dipasang di Cloudflare.</p>`;return}
-  const st=p?.status||'UNPAID',done=st==='COMPLETED';normalizeLegacyLedger(done);
+  const cfg=await payJson('/api/payments/config');if(!cfg.r.ok||!cfg.d.ok)throw new Error('config');
+  const p=status.d.payment,refund=status.d.refund,attention=status.d.attention==='duplicate_payment_detected',st=p?.status||'UNPAID',done=st==='COMPLETED';
+  normalizeLegacyLedger(done,attention);
   const refundHtml=refund?`<div class="divider"></div><div class="row between"><b>Refund</b><span class="pill ${refund.status==='SUCCEEDED'?'green':'blue'}">${refundLabel(refund.status)}</span></div><div class="meta" style="margin-top:6px">${payMoney(refund.amount)} • ${refund.currency||'IDR'}</div>`:'';
+  if(attention){card.innerHTML=`<div class="kicker">PAYMENT REVIEW</div><div class="row between"><h3 style="margin:6px 0">${payMoney(p?.amount||order.total)}</h3><span class="pill blue">⚠ Ditinjau</span></div><p class="meta">Lebih dari satu pembayaran terverifikasi terdeteksi untuk booking ini. Jangan melakukan pembayaran lagi. ENTEGO mengunci tindakan otomatis sampai transaksi direview.</p>${refundHtml}`;return}
+  if(!cfg.d.configured&&!done){card.innerHTML=`<div class="kicker">PAYMENT</div><h3 style="margin:6px 0">${payMoney(p?.amount||order.total)}</h3><span class="pill blue">Xendit Sandbox belum dikonfigurasi</span><p class="meta">Booking tersimpan aman. Pembayaran baru tidak dapat dimulai sampai gateway server dikonfigurasi.</p>${refundHtml}`;return}
   card.innerHTML=`<div class="row between"><div><div class="kicker">XENDIT PAYMENT</div><h3 style="margin:6px 0">${payMoney(p?.amount||order.total)}</h3></div><span class="pill ${done?'green':'blue'}">${done?'✓ ':''}${payStatusLabel(st)}</span></div><p class="meta">Hosted Checkout • Status dikonfirmasi server melalui webhook dan reconciliation.</p>${done?'<div class="meta">Pembayaran sudah terverifikasi.</div>':`<button class="btn primary" id="entegoPayNow" style="width:100%;margin-top:10px">${p?.status==='ACTIVE'?'Buka Pembayaran':'Lanjut Pembayaran'}</button>`}${refundHtml}`;
   card.querySelector('#entegoPayNow')?.addEventListener('click',()=>createPaymentSession(card.querySelector('#entegoPayNow')));
- }catch{normalizeLegacyLedger(false);card.innerHTML='<div class="kicker">PAYMENT</div><span class="pill blue">Gateway belum tersambung</span><p class="meta">Booking tetap tersimpan. Coba pembayaran lagi setelah backend production aktif.</p>'}
+ }catch{normalizeLegacyLedger(false);card.innerHTML='<div class="kicker">PAYMENT</div><span class="pill blue">Gateway belum tersambung</span><p class="meta">Booking tetap tersimpan. Status pembayaran tidak akan diasumsikan berhasil tanpa konfirmasi server.</p>'}
 }
 
 async function createPaymentSession(button){
