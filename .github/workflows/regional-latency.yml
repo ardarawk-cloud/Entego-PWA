@@ -37,6 +37,8 @@ jobs:
           globalping http "$BASE_URL/api/directory?limit=1" from Jakarta --limit 1 --method GET --latency --ci
           echo '=== DIRECTORY WARM / JAKARTA ==='
           globalping http "$BASE_URL/api/directory?limit=1" from Jakarta --limit 1 --method GET --latency --ci
+          echo '=== DIRECTORY SERVER TIMING / JAKARTA ==='
+          globalping http "$BASE_URL/api/directory?limit=1" from Jakarta --limit 1 --method GET --full --ci
 
       - name: Compare broader Indonesia directory latency
         shell: bash
