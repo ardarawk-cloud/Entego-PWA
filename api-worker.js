@@ -26,7 +26,7 @@ async function paymentGate(env,bookingId,status){
 
 async function handleProtected(request,env){
  const url=new URL(request.url),path=url.pathname,method=request.method;
- if(path==='/api/health')return json({ok:true,service:'entego-api',storage:'durable-object-sqlite',auth:'role-session-cookie',payment:'xendit-payment-session',reconciliation:'strict',version:'v31'});
+ if(path==='/api/health')return json({ok:true,service:'entego-api',storage:'durable-object-sqlite',auth:'role-session-cookie',payment:'xendit-payment-session',reconciliation:'strict',adminPayment:'server-managed',version:'v32'});
  if(!path.startsWith('/api/'))return null;
  if(path.startsWith('/api/auth/'))return null;
  const user=await requireUser(request,env);
