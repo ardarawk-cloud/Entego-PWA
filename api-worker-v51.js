@@ -15,4 +15,4 @@ async function participants(request,env,bookingId){
  }
  return json({ok:true,participants:safe});
 }
-export default {async fetch(request,env){const url=new URL(request.url),path=url.pathname;if(path==='/api/health'&&request.method==='GET'){const response=await core.fetch(request,env);let data={};try{data=await response.json()}catch{};return json({...data,authStore:'v2-clean',bookingParticipants:'privacy-safe',version:'v51'})}const m=path.match(/^\/api\/bookings\/([^/]+)\/participants$/);if(m&&request.method==='GET')return participants(request,env,decodeURIComponent(m[1]));return core.fetch(request,env)}};
+export default {async fetch(request,env){const url=new URL(request.url),path=url.pathname;if(path==='/api/health'&&request.method==='GET'){const response=await core.fetch(request,env);let data={};try{data=await response.json()}catch{};return json({...data,authStore:'v2-clean',bookingParticipants:'privacy-safe',legacyCancelUi:'disabled',version:'v52'})}const m=path.match(/^\/api\/bookings\/([^/]+)\/participants$/);if(m&&request.method==='GET')return participants(request,env,decodeURIComponent(m[1]));return core.fetch(request,env)}};
