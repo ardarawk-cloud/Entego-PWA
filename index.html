@@ -10,44 +10,53 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ENTEGO" />
   <title>ENTEGO</title>
-  <link rel="manifest" href="/manifest.webmanifest?v=58">
-  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=58">
-  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=58">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=58">
+  <link rel="manifest" href="/manifest.webmanifest?v=59">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=59">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=59">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=59">
+  <style>
+    #entegoBootShield{position:fixed;inset:0;z-index:99999;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .16s ease}
+    #entegoBootShield .boot-inner{width:min(86vw,340px);text-align:center}
+    #entegoBootShield img{width:78px;height:78px;object-fit:contain;border-radius:18px;margin-bottom:16px}
+    #entegoBootShield b{display:block;font-size:23px;letter-spacing:.08em}
+    #entegoBootShield span{display:block;margin-top:8px;font-size:13px;line-height:1.5;opacity:.75}
+  </style>
 </head>
 <body>
-  <div id="app"></div>
+  <div id="entegoBootShield"><div class="boot-inner"><img src="/logo-header.png?v=59" alt="ENTEGO"><b>ENTEGO</b><span id="entegoBootText">Menyiapkan sesi aman…</span></div></div>
+  <div id="app" style="visibility:hidden"></div>
+  <script>setTimeout(()=>{const x=document.getElementById('entegoBootText');if(x)x.textContent='Koneksi membutuhkan waktu lebih lama. ENTEGO tetap menahan data yang belum terverifikasi.'},8000)</script>
   <script type="module" src="/main.js"></script>
-  <script type="module" src="/final-flow.js?v=58"></script>
-  <script type="module" src="/reschedule-flow.js?v=58"></script>
-  <script type="module" src="/completion-flow.js?v=58"></script>
-  <script type="module" src="/ops-flow.js?v=58"></script>
-  <script type="module" src="/partner-category-flow.js?v=58"></script>
-  <script type="module" src="/partner-profile-flow.js?v=58"></script>
-  <script type="module" src="/partner-marketplace-flow.js?v=58"></script>
-  <script type="module" src="/partner-offer-flow.js?v=58"></script>
-  <script type="module" src="/market-booking-flow.js?v=58"></script>
-  <script type="module" src="/booking-integrity-flow.js?v=58"></script>
-  <script type="module" src="/auth-flow.js?v=58"></script>
-  <script type="module" src="/security-sessions-flow.js?v=58"></script>
-  <script type="module" src="/auth-booking-guard-flow.js?v=58"></script>
-  <script type="module" src="/server-partner-flow.js?v=58"></script>
-  <script type="module" src="/trust-flow.js?v=58"></script>
-  <script type="module" src="/trust-center-flow.js?v=58"></script>
-  <script type="module" src="/participants-flow.js?v=58"></script>
-  <script type="module" src="/readiness-flow.js?v=58"></script>
-  <script type="module" src="/action-center-flow.js?v=58"></script>
-  <script type="module" src="/privacy-center-flow.js?v=58"></script>
-  <script type="module" src="/server-booking-flow.js?v=58"></script>
-  <script type="module" src="/server-orders-flow.js?v=58"></script>
-  <script type="module" src="/server-reschedule-flow.js?v=58"></script>
-  <script type="module" src="/server-review-flow.js?v=58"></script>
-  <script type="module" src="/payment-flow.js?v=58"></script>
-  <script type="module" src="/payment-state-guard-flow.js?v=58"></script>
-  <script type="module" src="/admin-payment-flow.js?v=58"></script>
-  <script type="module" src="/admin-route-integrity-flow.js?v=58"></script>
-  <script type="module" src="/truthful-data-flow.js?v=58"></script>
-  <script type="module" src="/production-truth-gate-flow.js?v=58"></script>
-  <script type="module" src="/production-guard-flow.js?v=58"></script>
+  <script type="module" src="/final-flow.js?v=59"></script>
+  <script type="module" src="/reschedule-flow.js?v=59"></script>
+  <script type="module" src="/completion-flow.js?v=59"></script>
+  <script type="module" src="/ops-flow.js?v=59"></script>
+  <script type="module" src="/partner-category-flow.js?v=59"></script>
+  <script type="module" src="/partner-profile-flow.js?v=59"></script>
+  <script type="module" src="/partner-marketplace-flow.js?v=59"></script>
+  <script type="module" src="/partner-offer-flow.js?v=59"></script>
+  <script type="module" src="/market-booking-flow.js?v=59"></script>
+  <script type="module" src="/booking-integrity-flow.js?v=59"></script>
+  <script type="module" src="/auth-flow.js?v=59"></script>
+  <script type="module" src="/security-sessions-flow.js?v=59"></script>
+  <script type="module" src="/auth-booking-guard-flow.js?v=59"></script>
+  <script type="module" src="/server-partner-flow.js?v=59"></script>
+  <script type="module" src="/trust-flow.js?v=59"></script>
+  <script type="module" src="/trust-center-flow.js?v=59"></script>
+  <script type="module" src="/participants-flow.js?v=59"></script>
+  <script type="module" src="/readiness-flow.js?v=59"></script>
+  <script type="module" src="/action-center-flow.js?v=59"></script>
+  <script type="module" src="/privacy-center-flow.js?v=59"></script>
+  <script type="module" src="/server-booking-flow.js?v=59"></script>
+  <script type="module" src="/server-orders-flow.js?v=59"></script>
+  <script type="module" src="/server-reschedule-flow.js?v=59"></script>
+  <script type="module" src="/server-review-flow.js?v=59"></script>
+  <script type="module" src="/payment-flow.js?v=59"></script>
+  <script type="module" src="/payment-state-guard-flow.js?v=59"></script>
+  <script type="module" src="/admin-payment-flow.js?v=59"></script>
+  <script type="module" src="/admin-route-integrity-flow.js?v=59"></script>
+  <script type="module" src="/truthful-data-flow.js?v=59"></script>
+  <script type="module" src="/production-truth-gate-flow.js?v=59"></script>
+  <script type="module" src="/production-guard-flow.js?v=59"></script>
 </body>
 </html>
