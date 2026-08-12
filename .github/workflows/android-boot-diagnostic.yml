@@ -60,9 +60,10 @@ jobs:
               const started=Date.now();
               await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:30000});
               console.log(`[${label}] DOMContentLoaded ${Date.now()-started}ms`);
+              let previous=0;
               for(const delay of [0,500,1200,1800,3000,4500]){
-                if(delay) await page.waitForTimeout(delay-(arguments.callee?.lastDelay||0)).catch(()=>{});
-                arguments.callee.lastDelay=delay;
+                if(delay>previous) await page.waitForTimeout(delay-previous);
+                previous=delay;
                 const state=await page.evaluate(async()=>({
                   href:location.href,
                   shield:!!document.querySelector('#entegoBootShield'),
