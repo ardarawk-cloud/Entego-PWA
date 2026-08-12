@@ -13,13 +13,15 @@
       {"name":"ENT_STORE","class_name":"EntegoStore"},
       {"name":"ENT_AUTH","class_name":"EntegoAuth"},
       {"name":"ENT_PAY","class_name":"EntegoPayment"},
-      {"name":"ENT_PARTNER","class_name":"EntegoPartner"}
+      {"name":"ENT_PARTNER","class_name":"EntegoPartner"},
+      {"name":"ENT_CHAT","class_name":"EntegoChat"}
     ]
   },
   "exports":{
     "EntegoStore":{"type":"durable-object","storage":"sqlite"},
     "EntegoAuth":{"type":"durable-object","storage":"sqlite"},
     "EntegoPayment":{"type":"durable-object","storage":"sqlite"},
-    "EntegoPartner":{"type":"durable-object","storage":"sqlite"}
+    "EntegoPartner":{"type":"durable-object","storage":"sqlite"},
+    "EntegoChat":{"type":"durable-object","storage":"sqlite"}
   }
 }
