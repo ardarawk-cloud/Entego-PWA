@@ -1,6 +1,6 @@
 {
   "name":"entego-pwa",
-  "main":"./api-worker-v62.js",
+  "main":"./api-worker-v63.js",
   "compatibility_date":"2026-08-12",
   "assets":{
     "directory":"./dist",
@@ -17,7 +17,8 @@
       {"name":"ENT_CHAT","class_name":"EntegoChat"},
       {"name":"ENT_OPS","class_name":"EntegoOps"},
       {"name":"ENT_PRESENCE","class_name":"EntegoPresence"},
-      {"name":"ENT_ALERTS","class_name":"EntegoAlerts"}
+      {"name":"ENT_ALERTS","class_name":"EntegoAlerts"},
+      {"name":"ENT_SUPPORT","class_name":"EntegoSupport"}
     ]
   },
   "exports":{
@@ -28,6 +29,7 @@
     "EntegoChat":{"type":"durable-object","storage":"sqlite"},
     "EntegoOps":{"type":"durable-object","storage":"sqlite"},
     "EntegoPresence":{"type":"durable-object","storage":"sqlite"},
-    "EntegoAlerts":{"type":"durable-object","storage":"sqlite"}
+    "EntegoAlerts":{"type":"durable-object","storage":"sqlite"},
+    "EntegoSupport":{"type":"durable-object","storage":"sqlite"}
   }
 }
