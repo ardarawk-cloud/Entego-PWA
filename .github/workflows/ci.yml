@@ -39,15 +39,17 @@ jobs:
           test -f dist/participants-flow.js
           test -f dist/readiness-flow.js
           test -f dist/action-center-flow.js
+          test -f dist/privacy-center-flow.js
           test -f dist/server-chat-flow.js
           test -f dist/security-sessions-flow.js
           test -f dist/admin-route-integrity-flow.js
           test -f dist/portfolio-media-flow.js
           grep -q "auth-store-v2.js" api-worker-v50.js
-          grep -q '"main":"./api-worker-v55.js"' wrangler.jsonc
+          grep -q '"main":"./api-worker-v56.js"' wrangler.jsonc
           grep -q '"ENT_PRESENCE"' wrangler.jsonc
           grep -q '"ENT_ALERTS"' wrangler.jsonc
-          grep -q "action-center-flow.js?v=55" index.html
+          grep -q "action-center-flow.js?v=56" index.html
+          grep -q "privacy-center-flow.js?v=56" index.html
           ! grep -q "cancel-flow.js" index.html
 
       - name: Validate Cloudflare Worker bundle
