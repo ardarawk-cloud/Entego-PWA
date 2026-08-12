@@ -53,42 +53,35 @@ jobs:
               page.on('console',m=>console.log(`[${label} console ${m.type()}] ${m.text()}`));
               page.on('pageerror',e=>console.log(`[${label} pageerror] ${e.message}`));
               page.on('requestfailed',r=>console.log(`[${label} requestfailed] ${r.url()} :: ${r.failure()?.errorText}`));
-              page.on('response',r=>{
-                const u=r.url();
-                if(u.includes('/sw.js')||u.includes('/main')||u.includes('production-truth')||u.includes('route-loader')) console.log(`[${label} response] ${r.status()} ${u}`);
-              });
+              page.on('framenavigated',f=>{if(f===page.mainFrame())console.log(`[${label} navigated] ${f.url()}`)});
               const started=Date.now();
-              await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:30000});
-              console.log(`[${label}] DOMContentLoaded ${Date.now()-started}ms`);
-              let previous=0;
-              for(const delay of [0,500,1200,1800,3000,4500]){
-                if(delay>previous) await page.waitForTimeout(delay-previous);
-                previous=delay;
-                const state=await page.evaluate(async()=>({
-                  href:location.href,
-                  shield:!!document.querySelector('#entegoBootShield'),
-                  bootText:document.querySelector('#entegoBootText')?.textContent||'',
-                  appVisibility:getComputedStyle(document.querySelector('#app')).visibility,
-                  appChildren:document.querySelector('#app')?.childElementCount||0,
-                  mainCount:document.querySelectorAll('main.content').length,
-                  route:localStorage.getItem('entego_route'),
-                  controller:navigator.serviceWorker?.controller?.scriptURL||'',
-                  caches:('caches'in window)?await caches.keys():[]
-                }));
-                console.log(`[${label} +${delay}ms] ${JSON.stringify(state)}`);
-              }
-              const final=await page.evaluate(()=>({shield:!!document.querySelector('#entegoBootShield'),text:document.querySelector('#entegoBootText')?.textContent||'',main:document.querySelectorAll('main.content').length,html:document.querySelector('#app')?.innerHTML.slice(0,160)||''}));
+              await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:15000}).catch(e=>console.log(`[${label} goto interrupted] ${e.message}`));
+              console.log(`[${label}] initial navigation phase ${Date.now()-started}ms`);
+              await page.waitForTimeout(2200);
+              const state=await page.evaluate(async()=>({
+                href:location.href,
+                shield:!!document.querySelector('#entegoBootShield'),
+                bootText:document.querySelector('#entegoBootText')?.textContent||'',
+                appVisibility:document.querySelector('#app')?getComputedStyle(document.querySelector('#app')).visibility:'missing',
+                appChildren:document.querySelector('#app')?.childElementCount||0,
+                mainCount:document.querySelectorAll('main.content').length,
+                route:localStorage.getItem('entego_route'),
+                controller:navigator.serviceWorker?.controller?.scriptURL||'',
+                caches:('caches'in window)?await caches.keys():[]
+              }));
+              console.log(`[${label} settled] ${JSON.stringify(state)}`);
               await page.close();
-              return final;
+              return state;
             }
 
             const first=await launch('first');
-            await new Promise(r=>setTimeout(r,800));
+            await new Promise(r=>setTimeout(r,500));
             const second=await launch('second');
             console.log('FIRST_FINAL='+JSON.stringify(first));
             console.log('SECOND_FINAL='+JSON.stringify(second));
             await browser.close();
             if(second.shield) process.exit(2);
-            if(second.main<1) process.exit(3);
+            if(second.mainCount<1) process.exit(3);
+            if(!second.caches.includes('entego-v70')) process.exit(4);
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
