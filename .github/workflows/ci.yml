@@ -35,6 +35,7 @@ jobs:
           test -f dist/index.html
           test -f dist/sw.js
           test -f dist/trust-flow.js
+          test -f dist/trust-center-flow.js
           test -f dist/server-chat-flow.js
           test -f dist/security-sessions-flow.js
           test -f dist/admin-route-integrity-flow.js
