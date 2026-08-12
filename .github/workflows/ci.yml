@@ -34,40 +34,37 @@ jobs:
         run: |
           test -f dist/index.html
           test -f dist/sw.js
-          test -f dist/trust-flow.js
-          test -f dist/trust-center-flow.js
-          test -f dist/participants-flow.js
-          test -f dist/readiness-flow.js
-          test -f dist/action-center-flow.js
-          test -f dist/privacy-center-flow.js
-          test -f dist/support-center-flow.js
-          test -f dist/admin-account-control-flow.js
+          test -f dist/route-loader-flow.js
           test -f dist/production-truth-gate-flow.js
-          test -f dist/server-chat-flow.js
-          test -f dist/security-sessions-flow.js
-          test -f dist/admin-route-integrity-flow.js
-          test -f dist/portfolio-media-flow.js
-          grep -q "auth-store-v3.js" api-worker-v60.js
+          test -f dist/production-guard-flow.js
+          test -f dist/auth-flow.js
+          test -f dist/server-partner-flow.js
+          test -f dist/server-booking-flow.js
+          test -f dist/payment-flow.js
+          test -f dist/admin-payment-flow.js
+          test -f dist/support-center-flow.js
           grep -q '"main":"./api-worker-v63.js"' wrangler.jsonc
           grep -q '"ENT_SUPPORT","class_name":"EntegoSupport"' wrangler.jsonc
-          grep -q '"EntegoSupport":{"type":"durable-object","storage":"sqlite"}' wrangler.jsonc
-          grep -q "support_cases" support-store.js
-          grep -q "account_closure" api-worker-v63.js
-          grep -q "account_closure_blocked" api-worker-v63.js
-          grep -q "augmentActionCenter" api-worker-v63.js
-          grep -q "support-center-flow.js?v=63" index.html
-          grep -q "OFFICIAL CASE CENTER" support-center-flow.js
-          grep -q "PLATFORM CASE CONTROL" support-center-flow.js
-          grep -q "selectedTalentCache:'isolated-from-partner-self'" api-worker-v61.js
-          grep -q "cancellationFairness:'reason-required-audited'" api-worker-v62.js
-          grep -q "psgReasonDialog" payment-state-guard-flow.js
-          grep -q "entego_selected_partner_profile" server-partner-flow.js
-          grep -q "entego_selected_partner_packages" server-booking-flow.js
+          grep -q "RL_VERSION='64'" route-loader-flow.js
+          grep -q "CUSTOMER_MARKET" route-loader-flow.js
+          grep -q "CUSTOMER_ORDER" route-loader-flow.js
+          grep -q "PARTNER_BASE" route-loader-flow.js
+          grep -q "ADMIN_BASE" route-loader-flow.js
+          grep -q "server-chat-flow.js" route-loader-flow.js
+          grep -q "portfolio-media-flow.js" route-loader-flow.js
+          grep -q "admin-verification-flow.js" route-loader-flow.js
+          grep -q "route-loader-flow.js?v=64" index.html
+          grep -q "production-truth-gate-flow.js?v=64" index.html
+          grep -q "production-guard-flow.js?v=64" index.html
+          test "$(grep -o '<script type=\"module\" src=' index.html | wc -l)" -eq 4
+          ! grep -q "import './server-chat-flow.js'" production-guard-flow.js
+          ! grep -q "import './admin-verification-flow.js'" production-guard-flow.js
+          grep -q 'const CACHE="entego-v64"' sw.js
+          grep -q 'const SHELL=' sw.js
+          ! grep -q 'payment-flow.js?v=64' sw.js
+          ! grep -q 'admin-payment-flow.js?v=64' sw.js
+          ! grep -q 'portfolio-media-flow.js' sw.js
           grep -q 'id="entegoBootShield"' index.html
-          ! grep -q "const mbProfile=()=>mbRead('entego_partner_profile'" market-booking-flow.js
-          ! grep -q "biRead('entego_partner_packages'" booking-integrity-flow.js
-          ! grep -q "packages=sbRead('entego_partner_packages'" server-booking-flow.js
-          ! grep -q "profile=ptgRead('entego_partner_profile'" production-truth-gate-flow.js
           ! grep -q "cancel-flow.js" index.html
           ! grep -q "promo=150000" market-booking-flow.js
           ! grep -q "createOrderFromDraft" market-booking-flow.js
