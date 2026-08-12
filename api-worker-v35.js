@@ -4,7 +4,7 @@ export {EntegoStore,EntegoAuth,EntegoPayment,EntegoPartner,EntegoChat} from './a
 export {EntegoOps} from './ops-store.js';
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'}});
 const authStore=env=>env.ENT_AUTH.getByName('entego-auth-production');
-const partnerStore=env=>env.ENT_PARTNER.getByName('entego-partner-production');
+const partnerStore=env=>env.ENT_PARTNER.getByName('entego-partners-production');
 const bookingStore=env=>env.ENT_STORE.getByName('entego-production');
 const opsStore=env=>env.ENT_OPS.getByName('entego-ops-production');
 async function userFor(request,env){return getRequestUser(request,env)}
