@@ -4,7 +4,8 @@ const basic=key=>'Basic '+btoa(`${key}:`);
 const authStore=env=>env.ENT_AUTH.getByName('entego-auth-production');
 const bookingStore=env=>env.ENT_STORE.getByName('entego-production');
 const paymentStore=env=>env.ENT_PAY.getByName('entego-payment-production');
-
+const tokenEncoder=new TextEncoder();
+async function safeToken(a,b){if(!a||!b)return false;const [aa,bb]=await Promise.all([crypto.subtle.digest('SHA-256',tokenEncoder.encode(String(a))),crypto.subtle.digest('SHA-256',tokenEncoder.encode(String(b)))]);const av=new Uint8Array(aa),bv=new Uint8Array(bb);if(av.length!==bv.length)return false;return crypto.subtle.timingSafeEqual?crypto.subtle.timingSafeEqual(av,bv):av.every((v,i)=>v===bv[i])}
 async function canAccess(user,env,bookingId){return user&&bookingId&&authStore(env).canAccessBooking(user.id,user.role,bookingId)}
 function configured(env){return Boolean(env.XENDIT_SECRET_KEY&&env.XENDIT_WEBHOOK_TOKEN)}
 function publicPayment(row){return row?{bookingId:row.booking_id,provider:row.provider,sessionId:row.session_id,status:row.status,paymentId:row.payment_id||null,paymentRequestId:row.payment_request_id||null,paymentLinkUrl:row.payment_link_url||null,amount:row.amount,currency:row.currency}:null}
@@ -65,29 +66,32 @@ async function createRefund(request,env,user){
  const xr=await fetch('https://api.xendit.co/refunds',{method:'POST',headers:{authorization:basic(env.XENDIT_SECRET_KEY),'content-type':'application/json','accept':'application/json'},body:JSON.stringify({reference_id:referenceId,payment_request_id:payment.payment_request_id,currency:payment.currency||'IDR',amount,reason:'CANCELLATION',metadata:{booking_id:booking.id}})});
  let data={};try{data=await xr.json()}catch{};if(!xr.ok||!data.id)return json({ok:false,error:'xendit_refund_failed',providerStatus:xr.status,providerCode:clean(data.error_code,80)||null},502);
  const refund=await paymentStore(env).saveRefund({bookingId,refundId:data.id,referenceId,paymentRequestId:payment.payment_request_id,amount:data.amount??amount,currency:data.currency||payment.currency||'IDR',status:data.status||'PENDING',reason:data.reason||'CANCELLATION'});
- if(refund.status==='SUCCEEDED')await bookingStore(env).updateStatus(bookingId,'dibatalkan');
+ if(refund.status==='SUCCEEDED'&&booking.status!=='dibatalkan')await bookingStore(env).updateStatus(bookingId,'dibatalkan');
  return json({ok:true,refund},201);
 }
 
+function webhookData(body,event){const raw=body?.data;if(event.startsWith('refund.')&&raw?.data&&!raw.id&&!raw.refund_id)return raw.data;return raw}
 async function webhook(request,env){
  if(!env.XENDIT_WEBHOOK_TOKEN)return json({ok:false,error:'webhook_not_configured'},503);
- const token=request.headers.get('x-callback-token')||'';if(token!==env.XENDIT_WEBHOOK_TOKEN)return json({ok:false,error:'invalid_webhook_token'},401);
+ const supplied=request.headers.get('x-callback-token')||'';if(!(await safeToken(supplied,env.XENDIT_WEBHOOK_TOKEN)))return json({ok:false,error:'invalid_webhook_token'},401);
  const body=await request.json().catch(()=>null);if(!body?.event||!body?.data)return json({ok:false,error:'invalid_webhook'},400);
- const event=String(body.event),webhookId=request.headers.get('webhook-id')||`${event}:${body.data.payment_session_id||body.data.id||body.data.refund_id||''}:${body.created||''}`;
+ const event=String(body.event),data=webhookData(body,event);if(!data)return json({ok:false,error:'invalid_webhook_data'},400);
+ const webhookId=request.headers.get('webhook-id')||`${event}:${data.payment_session_id||data.id||data.refund_id||''}:${body.created||data.updated||data.created||''}`;
  let applied=null;
- if(['payment_session.completed','payment_session.expired'].includes(event))applied=await paymentStore(env).applySessionEvent(body.data,event);
- else if(['refund.succeeded','refund.failed'].includes(event))applied=await paymentStore(env).applyRefundEvent(body.data,event);
+ if(['payment_session.completed','payment_session.expired'].includes(event))applied=await paymentStore(env).applySessionEvent(data,event);
+ else if(['refund.succeeded','refund.failed'].includes(event))applied=await paymentStore(env).applyRefundEvent(data,event);
  else return json({ok:true,ignored:true});
  if(!applied?.ok)return json({ok:false,error:applied?.error||'reconciliation_failed'},409);
  const fresh=await paymentStore(env).markWebhook(webhookId,event);if(!fresh)return json({ok:true,duplicate:true});
- if(event==='refund.succeeded'&&applied.refund?.booking_id)await bookingStore(env).updateStatus(applied.refund.booking_id,'dibatalkan');
+ if(event==='refund.succeeded'&&applied.refund?.booking_id){const booking=await bookingStore(env).getBooking(applied.refund.booking_id);if(booking&&booking.status!=='dibatalkan')await bookingStore(env).updateStatus(applied.refund.booking_id,'dibatalkan')}
+ if(applied.duplicatePayment){console.error('ENTEGO_DUPLICATE_PAYMENT',applied.payment?.booking_id,data.payment_session_id);return json({ok:true,processed:true,attention:'duplicate_payment_detected'})}
  return json({ok:true,processed:true});
 }
 
 export async function handlePaymentApi(request,env,user){
  const url=new URL(request.url),path=url.pathname;
  if((path==='/api/webhooks/xendit/payment-session'||path==='/api/webhooks/xendit')&&request.method==='POST')return webhook(request,env);
- if(path==='/api/payments/config'&&request.method==='GET')return json({ok:true,provider:'xendit',configured:configured(env),mode:'payment_session',refunds:true});
+ if(path==='/api/payments/config'&&request.method==='GET')return json({ok:true,provider:'xendit',configured:configured(env),mode:'payment_session',refunds:true,reconciliation:'terminal-safe'});
  if(!user)return json({ok:false,error:'unauthenticated'},401);
  if(path==='/api/payments/session'&&request.method==='POST')return createSession(request,env,user);
  if(path==='/api/payments/status'&&request.method==='GET')return paymentStatus(request,env,user);
