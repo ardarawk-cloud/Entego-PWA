@@ -16,10 +16,10 @@ async function createSession(request,env,user){
  if(['dibatalkan','selesai'].includes(booking.status))return json({ok:false,error:'booking_not_payable'},409);
  const amount=Math.max(0,Math.round(Number(booking.total)||0));if(amount<1000)return json({ok:false,error:'invalid_payment_amount'},400);
  const origin=new URL(request.url).origin,referenceId=`ENTEGO-${booking.id}`.slice(0,64);
- const payload={reference_id:referenceId,session_type:'PAY',mode:'PAYMENT_LINK',amount,currency:'IDR',country:'ID',locale:'id',description:`ENTEGO booking ${booking.id}`.slice(0,1000),success_return_url:`${origin}/?entego_payment=success&booking=${encodeURIComponent(booking.id)}`,cancel_return_url:`${origin}/?entego_payment=cancel&booking=${encodeURIComponent(booking.id)}`,metadata:{booking_id:booking.id},items:[{reference_id:booking.packageId||'service',type:'PHYSICAL_SERVICE',name:booking.packageName||'ENTEGO Service',net_unit_amount:Math.max(0,Math.round(Number(booking.packagePrice)||0)),quantity:1,category:'Entertainment & Rental Service'}]};
+ const payload={reference_id:referenceId,session_type:'PAY',mode:'PAYMENT_LINK',capture_method:'AUTOMATIC',amount,currency:'IDR',country:'ID',locale:'id',description:`ENTEGO booking ${booking.id}`.slice(0,1000),success_return_url:`${origin}/?entego_payment=success&booking=${encodeURIComponent(booking.id)}`,cancel_return_url:`${origin}/?entego_payment=cancel&booking=${encodeURIComponent(booking.id)}`,metadata:{booking_id:String(booking.id).slice(0,80)}};
  const xr=await fetch('https://api.xendit.co/sessions',{method:'POST',headers:{authorization:basic(env.XENDIT_SECRET_KEY),'content-type':'application/json','accept':'application/json'},body:JSON.stringify(payload)});
  let data={};try{data=await xr.json()}catch{}
- if(!xr.ok||!data.payment_session_id||!data.payment_link_url)return json({ok:false,error:'xendit_session_failed',providerStatus:xr.status},502);
+ if(!xr.ok||!data.payment_session_id||!data.payment_link_url)return json({ok:false,error:'xendit_session_failed',providerStatus:xr.status,providerCode:clean(data.error_code,80)||null},502);
  const record=await paymentStore(env).saveSession({bookingId:booking.id,sessionId:data.payment_session_id,referenceId,amount,status:data.status||'ACTIVE',paymentLinkUrl:data.payment_link_url,paymentId:data.payment_id||''});
  return json({ok:true,payment:{bookingId:record.booking_id,provider:'xendit',sessionId:record.session_id,status:record.status,paymentLinkUrl:record.payment_link_url,amount:record.amount,currency:record.currency}},201);
 }
