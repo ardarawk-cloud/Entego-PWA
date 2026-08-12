@@ -2,7 +2,7 @@ const RL_VERSION='66';
 const rlLoaded=new Set();
 let rlRoute='';
 const rlCurrent=()=>localStorage.getItem('entego_route')||'home';
-async function rlLoad(name){if(rlLoaded.has(name))return;rlLoaded.add(name);try{await import(`/${name}?v=${RL_VERSION}`)}catch(error){rlLoaded.delete(name);console.error('[ENTEGO lazy-load]',name,error)}}
+async function rlLoad(name){if(rlLoaded.has(name))return;rlLoaded.add(name);const url=`/${name}?v=${RL_VERSION}`;try{await import(/* @vite-ignore */ url)}catch(error){rlLoaded.delete(name);console.error('[ENTEGO lazy-load]',name,error)}}
 async function rlLoadMany(names){await Promise.all([...new Set(names)].map(rlLoad))}
 function rlIdle(fn,timeout=1000){if('requestIdleCallback'in window)requestIdleCallback(fn,{timeout});else setTimeout(fn,350)}
 const CUSTOMER_MARKET=['explore','detail','booking','checkout'];
