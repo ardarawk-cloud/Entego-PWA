@@ -5,8 +5,9 @@ const apEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':
 async function apJson(url,options){const r=await fetch(url,{cache:'no-store',headers:{accept:'application/json',...(options?.headers||{})},...options});let d={};try{d=await r.json()}catch{};return {r,d}}
 function apPaymentLabel(p){if(!p)return 'Belum dibayar';return ({ACTIVE:'Menunggu Bayar',COMPLETED:'Lunas',EXPIRED:'Expired'})[p.status]||p.status}
 function apRefundLabel(r){if(!r)return '';return ({PENDING:'Refund diproses',SUCCEEDED:'Refund berhasil',FAILED:'Refund gagal'})[r.status]||r.status}
+function apSyncAdminBanner(){if(apRoute()!=='adminBookings')return;const banner=document.querySelector('#pgAdminBeta');if(banner)banner.innerHTML='<span class="pill green">ADMIN SERVER</span><div class="meta" style="margin-top:8px">Booking, payment, dan refund dibaca dari backend terautentikasi. Aksi finansial tetap mengikuti state server.</div>'}
 async function apRender(){
- if(apRoute()!=='adminBookings')return;const main=document.querySelector('main.content');if(!main||document.querySelector('#entegoAdminServerBookings'))return;
+ if(apRoute()!=='adminBookings')return;apSyncAdminBanner();const main=document.querySelector('main.content');if(!main||document.querySelector('#entegoAdminServerBookings'))return;
  const section=document.createElement('section');section.id='entegoAdminServerBookings';section.className='section';section.innerHTML='<div class="section-head"><h2>Server Bookings</h2><span class="pill">Loading…</span></div>';main.prepend(section);
  try{
   const list=await apJson('/api/bookings?limit=20');if(!list.r.ok||!list.d.ok)throw new Error(list.d.error||'load_failed');const bookings=list.d.bookings||[];
@@ -17,4 +18,4 @@ async function apRender(){
  }catch(e){section.innerHTML=`<div class="section-head"><h2>Server Bookings</h2></div><div class="card"><span class="pill blue">Tidak dapat dimuat</span><p class="meta">${e.message==='unauthenticated'?'Login Admin diperlukan.':'Backend admin belum tersedia.'}</p></div>`}
 }
 async function apRefund(booking,button){if(!confirm(`Proses refund penuh untuk ${booking.id}?`))return;const old=button.textContent;button.disabled=true;button.textContent='Memproses…';try{const x=await apJson('/api/payments/refund',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({bookingId:booking.id})});if(!x.r.ok||!x.d.ok)throw new Error(x.d.error||'refund_failed');alert(x.d.refund?.status==='SUCCEEDED'?'Refund berhasil dan booking ditutup.':'Refund sudah dikirim dan menunggu hasil Xendit.');document.querySelector('#entegoAdminServerBookings')?.remove();apRender()}catch(e){button.disabled=false;button.textContent=old;alert(e.message==='payment_not_refundable'?'Payment belum memiliki Payment Request yang dapat direfund.':'Refund belum dapat diproses.')}}
-const apRun=()=>apRender();new MutationObserver(apRun).observe(document.documentElement,{childList:true,subtree:true});window.addEventListener('load',apRun);apRun();
+const apRun=()=>{apSyncAdminBanner();apRender()};new MutationObserver(apRun).observe(document.documentElement,{childList:true,subtree:true});window.addEventListener('load',apRun);apRun();
