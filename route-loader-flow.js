@@ -1,4 +1,4 @@
-const RL_VERSION='64';
+const RL_VERSION='65';
 const rlLoaded=new Set();
 let rlRoute='';
 const rlCurrent=()=>localStorage.getItem('entego_route')||'home';
@@ -10,7 +10,7 @@ const PARTNER_BASE=['partner','partnerOnboarding','partnerProfile','partnerPacka
 const ADMIN_BASE=['admin','adminBookings','adminPayments','adminVerify','adminDispute','adminUsers','adminAccounts'];
 async function rlForRoute(route){
  const modules=['auth-flow.js','truthful-data-flow.js'];
- if(['home','profile','notifications','orders','partner','partnerOrders','admin','adminBookings','adminPayments','adminVerify'].includes(route))modules.push('action-center-flow.js');
+ if(['profile','notifications','orders','partner','partnerOrders','admin','adminBookings','adminPayments','adminVerify'].includes(route))modules.push('action-center-flow.js');
  if(CUSTOMER_MARKET.includes(route))modules.push('server-partner-flow.js','partner-marketplace-flow.js','partner-offer-flow.js','market-booking-flow.js');
  if(['booking','checkout'].includes(route))modules.push('booking-integrity-flow.js','auth-booking-guard-flow.js','server-booking-flow.js','trust-flow.js');
  if(CUSTOMER_ORDER.includes(route)||['partnerOrders','partnerOrderDetail','partnerChat'].includes(route))modules.push('server-orders-flow.js','server-booking-flow.js');
