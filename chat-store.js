@@ -1,0 +1,7 @@
+import { DurableObject } from "cloudflare:workers";
+const clean=(v,max=1000)=>String(v??'').trim().slice(0,max);
+export class EntegoChat extends DurableObject{
+ constructor(ctx,env){super(ctx,env);this.sql=ctx.storage.sql;this.sql.exec(`CREATE TABLE IF NOT EXISTS messages(id TEXT PRIMARY KEY,booking_id TEXT NOT NULL,sender_user_id TEXT NOT NULL,sender_role TEXT NOT NULL,sender_name TEXT NOT NULL,body TEXT NOT NULL,created_at TEXT NOT NULL);CREATE INDEX IF NOT EXISTS idx_chat_booking ON messages(booking_id,created_at);`)}
+ async list(bookingId,limit=100){const id=clean(bookingId,120),n=Math.max(1,Math.min(200,Number(limit)||100));return this.sql.exec(`SELECT id,booking_id,sender_user_id,sender_role,sender_name,body,created_at FROM messages WHERE booking_id=? ORDER BY created_at ASC LIMIT ?`,id,n).toArray().map(r=>({id:r.id,bookingId:r.booking_id,senderUserId:r.sender_user_id,senderRole:r.sender_role,senderName:r.sender_name,body:r.body,createdAt:r.created_at}))}
+ async add(bookingId,user,body){const id=clean(bookingId,120),text=clean(body,1500);if(!id||!text)throw new Error('MESSAGE_REQUIRED');const msgId=`MSG-${crypto.randomUUID()}`,now=new Date().toISOString();this.sql.exec(`INSERT INTO messages(id,booking_id,sender_user_id,sender_role,sender_name,body,created_at) VALUES(?,?,?,?,?,?,?)`,msgId,id,clean(user.id,100),clean(user.role,20),clean(user.displayName||user.role,120),text,now);return {id:msgId,bookingId:id,senderUserId:user.id,senderRole:user.role,senderName:user.displayName||user.role,body:text,createdAt:now}}
+}
