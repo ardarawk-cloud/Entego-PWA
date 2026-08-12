@@ -1,0 +1,45 @@
+name: ENTEGO REGIONAL LATENCY
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/regional-latency.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  jakarta-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      BASE_URL: https://entego-pwa.ardarawk.workers.dev
+    steps:
+      - name: Install Globalping CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -s https://packagecloud.io/install/repositories/jsdelivr/globalping/script.deb.sh | sudo bash
+          sudo apt-get install -y globalping
+          globalping version
+
+      - name: Measure ENTEGO from Jakarta
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== HOME / JAKARTA ==='
+          globalping http "$BASE_URL/" from Jakarta --limit 1 --method GET --latency --ci
+          echo '=== AUTH / JAKARTA ==='
+          globalping http "$BASE_URL/api/auth/me" from Jakarta --limit 1 --method GET --latency --ci
+          echo '=== DIRECTORY COLD / JAKARTA ==='
+          globalping http "$BASE_URL/api/directory?limit=1" from Jakarta --limit 1 --method GET --latency --ci
+          echo '=== DIRECTORY WARM / JAKARTA ==='
+          globalping http "$BASE_URL/api/directory?limit=1" from Jakarta --limit 1 --method GET --latency --ci
+
+      - name: Compare broader Indonesia directory latency
+        shell: bash
+        run: |
+          set -euo pipefail
+          globalping http "$BASE_URL/api/directory?limit=1" from Indonesia --limit 3 --method GET --latency --ci
