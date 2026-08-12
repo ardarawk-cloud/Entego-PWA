@@ -1,0 +1,6 @@
+import core from './api-worker-v35.js';
+import {getRequestUser} from './auth-api.js';
+import {handleMediaApi,handlePublicMedia} from './media-api.js';
+export {EntegoStore,EntegoAuth,EntegoPayment,EntegoPartner,EntegoChat,EntegoOps} from './api-worker-v35.js';
+const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'}});
+export default {async fetch(request,env){const path=new URL(request.url).pathname;if(path==='/api/health'&&request.method==='GET')return json({ok:true,service:'entego-api',storage:'durable-object-sqlite',auth:'role-session-cookie',payment:'xendit-payment-session',partnerDirectory:'server-managed',partnerVerification:'admin-managed',reviews:'server-managed',chat:'server-managed',completion:'server-managed',disputes:'server-managed',media:env.ENT_MEDIA?'r2':'r2-ready',reconciliation:'strict',adminPayment:'server-managed',version:'v36'});if(path.startsWith('/media/')){const media=await handlePublicMedia(request,env);if(media)return media}if(path.startsWith('/api/media/')){const user=await getRequestUser(request,env);const media=await handleMediaApi(request,env,user);if(media)return media}return core.fetch(request,env)}};
