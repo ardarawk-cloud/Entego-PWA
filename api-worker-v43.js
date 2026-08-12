@@ -1,0 +1,7 @@
+import core from './api-worker-v37.js';
+export {EntegoStore,EntegoAuth,EntegoPayment,EntegoPartner,EntegoChat,EntegoOps} from './api-worker-v37.js';
+const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'}});
+function stateChanging(method){return ['POST','PUT','PATCH','DELETE'].includes(method)}
+function csrfBlocked(request){const url=new URL(request.url),path=url.pathname;if(!path.startsWith('/api/')||path.startsWith('/api/webhooks/'))return false;if(!stateChanging(request.method))return false;const site=(request.headers.get('sec-fetch-site')||'').toLowerCase();if(site==='cross-site')return true;const origin=request.headers.get('origin');return Boolean(origin&&origin!==url.origin)}
+function secure(response){const h=new Headers(response.headers);h.set('x-content-type-options','nosniff');h.set('x-frame-options','DENY');h.set('referrer-policy','strict-origin-when-cross-origin');h.set('strict-transport-security','max-age=31536000');h.set('cross-origin-opener-policy','same-origin');h.set('content-security-policy',"frame-ancestors 'none'; base-uri 'self'; object-src 'none'");return new Response(response.body,{status:response.status,statusText:response.statusText,headers:h})}
+export default {async fetch(request,env){if(csrfBlocked(request))return secure(json({ok:false,error:'cross_site_request_blocked'},403));const response=await core.fetch(request,env);return secure(response)}};
