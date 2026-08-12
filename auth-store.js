@@ -53,6 +53,7 @@ export class EntegoAuth extends DurableObject {
       CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
       CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON sessions(expires_at);
       CREATE INDEX IF NOT EXISTS idx_booking_access_user ON booking_access(user_id);
+      CREATE INDEX IF NOT EXISTS idx_users_role_verified ON users(role,verified);
     `);
   }
 
@@ -136,8 +137,20 @@ export class EntegoAuth extends DurableObject {
 
   async assignPartner(bookingId, partnerUserId) {
     const user=await this.getUser(partnerUserId);
-    if(!user||user.role!=="partner")return false;
+    if(!user||user.role!=="partner"||user.status!=="active")return false;
     return this.bindBooking(user.id,bookingId,"partner");
+  }
+
+  async listPartners(limit=100) {
+    const safeLimit=Math.max(1,Math.min(200,Number(limit)||100));
+    return this.sql.exec(`SELECT * FROM users WHERE role='partner' ORDER BY verified ASC,created_at DESC LIMIT ?`,safeLimit).toArray().map(publicUser);
+  }
+
+  async setPartnerVerification(userId, verified) {
+    const uid=clean(userId,100),row=this.sql.exec(`SELECT * FROM users WHERE id=? AND role='partner' LIMIT 1`,uid).toArray()[0];
+    if(!row)return null;
+    this.sql.exec(`UPDATE users SET verified=?,updated_at=? WHERE id=?`,verified?1:0,new Date().toISOString(),uid);
+    return this.getUser(uid);
   }
 
   async promoteAdmin(email) {
