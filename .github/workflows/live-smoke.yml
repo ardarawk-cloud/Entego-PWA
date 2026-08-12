@@ -14,10 +14,10 @@ jobs:
     timeout-minutes: 5
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
-      EXPECTED_CACHE: entego-v67
+      EXPECTED_CACHE: entego-v68
       EXPECTED_INDEX_MARKER: entego_sw67_takeover
     steps:
-      - name: Wait for v67 production marker
+      - name: Wait for v68 service worker marker
         shell: bash
         run: |
           set -euo pipefail
@@ -27,13 +27,13 @@ jobs:
               echo "Production service worker exposes $EXPECTED_CACHE"
               exit 0
             fi
-            echo "Attempt $attempt/12: v67 service-worker marker not visible yet"
+            echo "Attempt $attempt/12: v68 service-worker marker not visible yet"
             sleep 5
           done
           echo "Production did not expose $EXPECTED_CACHE within the probe window"
           exit 1
 
-      - name: Verify production shell version
+      - name: Verify production shell and service worker
         shell: bash
         run: |
           set -euo pipefail
@@ -41,7 +41,9 @@ jobs:
           sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js")"
           grep -q "$EXPECTED_INDEX_MARKER" <<<"$index"
           grep -q "$EXPECTED_CACHE" <<<"$sw"
-          echo "Production shell markers match v67"
+          grep -q 'entego-directory-v68' <<<"$sw"
+          grep -q 'url.pathname==="/api/directory"' <<<"$sw"
+          echo "Production exposes the v68 directory-cache service worker"
 
       - name: Wait for directory timing instrumentation
         shell: bash
