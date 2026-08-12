@@ -1,7 +1,9 @@
 import bookingWorker from './worker.js';
 import {handleAuthApi,getRequestUser} from './auth-api.js';
+import {handlePaymentApi} from './payment-api.js';
 export {EntegoStore} from './worker.js';
 export {EntegoAuth} from './auth-store.js';
+export {EntegoPayment} from './payment-store.js';
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'}});
 const authStore=env=>env.ENT_AUTH.getByName('entego-auth-production');
@@ -13,12 +15,15 @@ async function canAccess(user,env,bookingId){return user&&bookingId&&authStore(e
 
 async function handleProtected(request,env){
  const url=new URL(request.url),path=url.pathname,method=request.method;
- if(path==='/api/health')return json({ok:true,service:'entego-api',storage:'durable-object-sqlite',auth:'role-session-cookie',version:'v29'});
+ if(path==='/api/health')return json({ok:true,service:'entego-api',storage:'durable-object-sqlite',auth:'role-session-cookie',payment:'xendit-payment-session',version:'v30'});
  if(!path.startsWith('/api/'))return null;
  if(path.startsWith('/api/auth/'))return null;
  const user=await requireUser(request,env);
  if(!user)return json({ok:false,error:'unauthenticated'},401);
 
+ if(path.startsWith('/api/payments/')){
+  const payment=await handlePaymentApi(request,env,user);if(payment)return payment;
+ }
  if(path==='/api/bookings'&&method==='POST'){
   if(!['customer','admin'].includes(user.role))return json({ok:false,error:'customer_role_required'},403);
   const response=await bookingWorker.fetch(request,env);
@@ -73,12 +78,15 @@ async function handleProtected(request,env){
   const body=await request.json();const ok=await authStore(env).assignPartner(decodeURIComponent(assign[1]),body.partnerUserId);
   return ok?json({ok:true}):json({ok:false,error:'partner_not_found'},404);
  }
-
  return bookingWorker.fetch(request,env);
 }
 
 export default {
  async fetch(request,env){
+  const path=new URL(request.url).pathname;
+  if(path==='/api/webhooks/xendit/payment-session'){
+   const payment=await handlePaymentApi(request,env,null);if(payment)return payment;
+  }
   const auth=await handleAuthApi(request,env);if(auth)return auth;
   const protectedResponse=await handleProtected(request,env);if(protectedResponse)return protectedResponse;
   return bookingWorker.fetch(request,env);
