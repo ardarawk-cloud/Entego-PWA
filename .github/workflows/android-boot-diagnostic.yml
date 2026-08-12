@@ -1,0 +1,93 @@
+name: ENTEGO ANDROID BOOT DIAGNOSTIC
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-boot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      BASE_URL: https://entego-pwa.ardarawk.workers.dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install browser harness
+        shell: bash
+        run: |
+          npm install --no-save --no-audit --no-fund playwright-core
+          if command -v google-chrome >/dev/null 2>&1; then echo "CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"; \
+          elif command -v google-chrome-stable >/dev/null 2>&1; then echo "CHROME=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"; \
+          elif command -v chromium >/dev/null 2>&1; then echo "CHROME=$(command -v chromium)" >> "$GITHUB_ENV"; \
+          else echo 'No system Chrome found'; exit 1; fi
+
+      - name: Probe first and second Android-like launch
+        shell: bash
+        run: |
+          node <<'NODE'
+          const { chromium } = require('playwright-core');
+          (async()=>{
+            const browser = await chromium.launch({headless:true, executablePath:process.env.CHROME, args:['--no-sandbox']});
+            const context = await browser.newContext({
+              viewport:{width:412,height:915},
+              isMobile:true,
+              hasTouch:true,
+              deviceScaleFactor:2.625,
+              userAgent:'Mozilla/5.0 (Linux; Android 14; Infinix X6739) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36'
+            });
+
+            async function launch(label){
+              const page = await context.newPage();
+              page.on('console',m=>console.log(`[${label} console ${m.type()}] ${m.text()}`));
+              page.on('pageerror',e=>console.log(`[${label} pageerror] ${e.message}`));
+              page.on('requestfailed',r=>console.log(`[${label} requestfailed] ${r.url()} :: ${r.failure()?.errorText}`));
+              page.on('response',r=>{
+                const u=r.url();
+                if(u.includes('/sw.js')||u.includes('/main')||u.includes('production-truth')||u.includes('route-loader')) console.log(`[${label} response] ${r.status()} ${u}`);
+              });
+              const started=Date.now();
+              await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:30000});
+              console.log(`[${label}] DOMContentLoaded ${Date.now()-started}ms`);
+              for(const delay of [0,500,1200,1800,3000,4500]){
+                if(delay) await page.waitForTimeout(delay-(arguments.callee?.lastDelay||0)).catch(()=>{});
+                arguments.callee.lastDelay=delay;
+                const state=await page.evaluate(async()=>({
+                  href:location.href,
+                  shield:!!document.querySelector('#entegoBootShield'),
+                  bootText:document.querySelector('#entegoBootText')?.textContent||'',
+                  appVisibility:getComputedStyle(document.querySelector('#app')).visibility,
+                  appChildren:document.querySelector('#app')?.childElementCount||0,
+                  mainCount:document.querySelectorAll('main.content').length,
+                  route:localStorage.getItem('entego_route'),
+                  controller:navigator.serviceWorker?.controller?.scriptURL||'',
+                  caches:('caches'in window)?await caches.keys():[]
+                }));
+                console.log(`[${label} +${delay}ms] ${JSON.stringify(state)}`);
+              }
+              const final=await page.evaluate(()=>({shield:!!document.querySelector('#entegoBootShield'),text:document.querySelector('#entegoBootText')?.textContent||'',main:document.querySelectorAll('main.content').length,html:document.querySelector('#app')?.innerHTML.slice(0,160)||''}));
+              await page.close();
+              return final;
+            }
+
+            const first=await launch('first');
+            await new Promise(r=>setTimeout(r,800));
+            const second=await launch('second');
+            console.log('FIRST_FINAL='+JSON.stringify(first));
+            console.log('SECOND_FINAL='+JSON.stringify(second));
+            await browser.close();
+            if(second.shield) process.exit(2);
+            if(second.main<1) process.exit(3);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
