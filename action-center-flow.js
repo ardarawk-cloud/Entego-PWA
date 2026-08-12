@@ -3,7 +3,7 @@ const acRoute=()=>localStorage.getItem('entego_route')||'home';
 const acUser=()=>{try{return JSON.parse(localStorage.getItem('entego_auth_user')||'null')}catch{return null}};
 const acEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 async function acJson(url,options={}){const r=await fetch(url,{cache:'no-store',headers:{accept:'application/json',...(options.headers||{})},...options});let d={};try{d=await r.json()}catch{};return {r,d}}
-function acActive(){return ['home','orders','partner','partnerOrders','profile','admin','adminBookings','adminPayments','adminVerify','notifications'].includes(acRoute())}
+function acActive(){return ['orders','partner','partnerOrders','profile','admin','adminBookings','adminPayments','adminVerify','notifications'].includes(acRoute())}
 function acLabel(role){return role==='admin'?'Risk & Action Center':role==='partner'?'Job Action Center':'Action Center'}
 function acTone(severity){return severity==='high'?'blue':severity==='medium'?'blue':''}
 async function acOpen(item){try{await acJson('/api/action-center/read',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:item.key})})}catch{}if(item.bookingId){try{const x=await acJson(`/api/bookings/${encodeURIComponent(item.bookingId)}`);if(x.r.ok&&x.d?.booking)localStorage.setItem(AC_ORDER,JSON.stringify(x.d.booking))}catch{}}if(item.route)localStorage.setItem('entego_route',item.route);location.reload()}
