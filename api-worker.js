@@ -8,14 +8,25 @@ export {EntegoPayment} from './payment-store.js';
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'}});
 const authStore=env=>env.ENT_AUTH.getByName('entego-auth-production');
 const bookingStore=env=>env.ENT_STORE.getByName('entego-production');
+const paymentStore=env=>env.ENT_PAY.getByName('entego-payment-production');
 const bookingIdFromPath=path=>decodeURIComponent((path.match(/^\/api\/bookings\/([^/]+)/)||[])[1]||'');
 
 async function requireUser(request,env){return getRequestUser(request,env)}
 async function canAccess(user,env,bookingId){return user&&bookingId&&authStore(env).canAccessBooking(user.id,user.role,bookingId)}
+async function paymentGate(env,bookingId,status){
+ const payment=await paymentStore(env).getByBooking(bookingId),refund=await paymentStore(env).getRefund(bookingId);
+ if(['berlangsung','selesai'].includes(status)&&payment?.status!=='COMPLETED')return {ok:false,error:'payment_required',paymentStatus:payment?.status||'UNPAID'};
+ if(['dibatalkan','ditolak'].includes(status)&&payment?.status==='COMPLETED'){
+  if(refund?.status==='SUCCEEDED')return {ok:true};
+  if(refund?.status==='PENDING')return {ok:false,error:'refund_pending',refundStatus:'PENDING'};
+  return {ok:false,error:'refund_required_before_cancel',paymentStatus:'COMPLETED'};
+ }
+ return {ok:true};
+}
 
 async function handleProtected(request,env){
  const url=new URL(request.url),path=url.pathname,method=request.method;
- if(path==='/api/health')return json({ok:true,service:'entego-api',storage:'durable-object-sqlite',auth:'role-session-cookie',payment:'xendit-payment-session',version:'v30'});
+ if(path==='/api/health')return json({ok:true,service:'entego-api',storage:'durable-object-sqlite',auth:'role-session-cookie',payment:'xendit-payment-session',reconciliation:'strict',version:'v31'});
  if(!path.startsWith('/api/'))return null;
  if(path.startsWith('/api/auth/'))return null;
  const user=await requireUser(request,env);
@@ -53,6 +64,7 @@ async function handleProtected(request,env){
    const body=await request.clone().json().catch(()=>({}));const status=String(body.status||'');
    if(user.role==='customer'&&status!=='dibatalkan')return json({ok:false,error:'forbidden_status_change'},403);
    if(user.role==='partner'&&!['diterima','ditolak','berlangsung','selesai'].includes(status))return json({ok:false,error:'forbidden_status_change'},403);
+   const gate=await paymentGate(env,id,status);if(!gate.ok)return json({ok:false,...gate},409);
    return bookingWorker.fetch(request,env);
   }
   if(isReschedule){
@@ -84,7 +96,7 @@ async function handleProtected(request,env){
 export default {
  async fetch(request,env){
   const path=new URL(request.url).pathname;
-  if(path==='/api/webhooks/xendit/payment-session'){
+  if(path==='/api/webhooks/xendit/payment-session'||path==='/api/webhooks/xendit'){
    const payment=await handlePaymentApi(request,env,null);if(payment)return payment;
   }
   const auth=await handleAuthApi(request,env);if(auth)return auth;
