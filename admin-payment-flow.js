@@ -1,7 +1,7 @@
 const AP_ORDER='entego_current_order_v2';
 const apRoute=()=>localStorage.getItem('entego_route')||'home';
 const apMoney=n=>`Rp${Number(n||0).toLocaleString('id-ID')}`;
-const apEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]));
+const apEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 async function apJson(url,options){const r=await fetch(url,{cache:'no-store',headers:{accept:'application/json',...(options?.headers||{})},...options});let d={};try{d=await r.json()}catch{};return {r,d}}
 function apPaymentLabel(p){if(!p)return 'Belum dibayar';return ({ACTIVE:'Menunggu Bayar',COMPLETED:'Lunas',EXPIRED:'Expired',CANCELED:'Dibatalkan'})[p.status]||p.status}
 function apRefundLabel(r){if(!r)return '';return ({PENDING:'Refund diproses',SUCCEEDED:'Refund berhasil',FAILED:'Refund gagal'})[r.status]||r.status}
