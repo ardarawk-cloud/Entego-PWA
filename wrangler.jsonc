@@ -1,6 +1,6 @@
 {
   "name":"entego-pwa",
-  "main":"./api-worker-v55.js",
+  "main":"./api-worker-v56.js",
   "compatibility_date":"2026-08-12",
   "assets":{
     "directory":"./dist",
