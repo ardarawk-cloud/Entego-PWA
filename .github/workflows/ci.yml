@@ -46,27 +46,27 @@ jobs:
           test -f dist/support-center-flow.js
           grep -q '"main":"./api-worker-v63.js"' wrangler.jsonc
           grep -q '"ENT_SUPPORT","class_name":"EntegoSupport"' wrangler.jsonc
-          grep -q "RL_VERSION='66'" route-loader-flow.js
+          grep -q "RL_VERSION='67'" route-loader-flow.js
           grep -q '@vite-ignore' route-loader-flow.js
           grep -q 'rlIdle' route-loader-flow.js
           grep -q "route!=='home'" route-loader-flow.js
-          grep -q "rlCurrent()==='home'" route-loader-flow.js
-          grep -q 'rlScheduled' route-loader-flow.js
           grep -q 'sanitizeHome' production-truth-gate-flow.js
           grep -q 'ptgScheduled' production-truth-gate-flow.js
-          grep -q 'Menyiapkan Talent terverifikasi' production-truth-gate-flow.js
-          grep -q "route-loader-flow.js?v=66" index.html
-          grep -q "production-truth-gate-flow.js?v=66" index.html
-          grep -q "production-guard-flow.js?v=66" index.html
+          grep -q "route-loader-flow.js?v=67" index.html
+          grep -q "production-truth-gate-flow.js?v=67" index.html
+          grep -q "production-guard-flow.js?v=67" index.html
+          grep -q "updateViaCache:'none'" index.html
+          grep -q 'controllerchange' index.html
+          grep -q 'entego_sw67_takeover' index.html
           test "$(grep -o '<script type=\"module\" src=' index.html | wc -l)" -eq 4
           ! grep -q "import './server-chat-flow.js'" production-guard-flow.js
           ! grep -q "import './admin-verification-flow.js'" production-guard-flow.js
-          grep -q 'const CACHE="entego-v66"' sw.js
+          grep -q 'const CACHE="entego-v67"' sw.js
           grep -q 'cacheFirst' sw.js
           grep -q 'staleWhileRevalidate' sw.js
           grep -q 'request.mode==="navigate"' sw.js
-          ! grep -q 'payment-flow.js?v=66' sw.js
-          ! grep -q 'admin-payment-flow.js?v=66' sw.js
+          ! grep -q 'payment-flow.js?v=67' sw.js
+          ! grep -q 'admin-payment-flow.js?v=67' sw.js
           ! grep -q 'portfolio-media-flow.js' sw.js
           grep -q 'authRefreshPromise' auth-flow.js
           grep -q 'requestIdleCallback' auth-flow.js
