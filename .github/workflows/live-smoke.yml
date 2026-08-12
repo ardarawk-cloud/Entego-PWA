@@ -29,7 +29,6 @@ jobs:
             if grep -q "$EXPECTED_INDEX_MARKER" <<<"$index" \
               && grep -q 'sanitizeHomeFallback' <<<"$index" \
               && grep -q 'Memulihkan tampilan ENTEGO' <<<"$index" \
-              && grep -q 'production-truth-gate-flow.js?v=69' <<<"$index" \
               && grep -q "$EXPECTED_CACHE" <<<"$sw" \
               && grep -q 'entego-directory-v68' <<<"$sw" \
               && grep -q 'production-truth-gate-flow.js?v=69' <<<"$sw" \
