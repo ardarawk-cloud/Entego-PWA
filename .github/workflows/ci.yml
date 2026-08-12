@@ -1,0 +1,43 @@
+name: ENTEGO CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build PWA
+        run: npm run build
+
+      - name: Verify critical PWA assets
+        shell: bash
+        run: |
+          test -f dist/index.html
+          test -f dist/sw.js
+          test -f dist/server-chat-flow.js
+          test -f dist/security-sessions-flow.js
+          test -f dist/admin-route-integrity-flow.js
+          test -f dist/portfolio-media-flow.js
+
+      - name: Validate Cloudflare Worker bundle
+        run: npx --yes wrangler@latest deploy --dry-run
