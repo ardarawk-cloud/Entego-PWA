@@ -14,35 +14,40 @@ jobs:
     timeout-minutes: 6
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
-      EXPECTED_CACHE: entego-v69
-      EXPECTED_INDEX_MARKER: entego_sw69_takeover
+      EXPECTED_CACHE: entego-v70
+      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='70'
     steps:
-      - name: Wait for complete v69 production state
+      - name: Wait for complete v70 production state
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 18); do
             index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/" 2>/dev/null || true)"
             sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js" 2>/dev/null || true)"
-            truth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/production-truth-gate-flow.js?v=69" 2>/dev/null || true)"
-            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=69" 2>/dev/null || true)"
-            if grep -q "$EXPECTED_INDEX_MARKER" <<<"$index" \
+            truth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/production-truth-gate-flow.js?v=70" 2>/dev/null || true)"
+            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=70" 2>/dev/null || true)"
+            if grep -q "$EXPECTED_BOOT" <<<"$index" \
+              && grep -q 'controllerReloading' <<<"$index" \
+              && grep -q 'visibilitychange' <<<"$index" \
+              && ! grep -q 'sessionStorage' <<<"$index" \
               && grep -q 'sanitizeHomeFallback' <<<"$index" \
-              && grep -q 'Memulihkan tampilan ENTEGO' <<<"$index" \
               && grep -q "$EXPECTED_CACHE" <<<"$sw" \
+              && grep -q 'CLIENT_REFRESH_VERSION="70"' <<<"$sw" \
+              && grep -q 'client.navigate' <<<"$sw" \
+              && grep -q '__entego_sw' <<<"$sw" \
               && grep -q 'entego-directory-v68' <<<"$sw" \
-              && grep -q 'production-truth-gate-flow.js?v=69' <<<"$sw" \
-              && grep -q 'route-loader-flow.js?v=69' <<<"$sw" \
+              && grep -q 'production-truth-gate-flow.js?v=70' <<<"$sw" \
+              && grep -q 'route-loader-flow.js?v=70' <<<"$sw" \
               && grep -q 'url.pathname==="/api/directory"' <<<"$sw" \
               && grep -q 'ptgReveal' <<<"$truth" \
-              && grep -q "RL_VERSION='69'" <<<"$loader"; then
-              echo "Production exposes complete ENTEGO v69 boot recovery state"
+              && grep -q "RL_VERSION='70'" <<<"$loader"; then
+              echo "Production exposes complete ENTEGO v70 stale-client migration"
               exit 0
             fi
-            echo "Attempt $attempt/18: production v69 assets are still converging"
+            echo "Attempt $attempt/18: production v70 assets are still converging"
             sleep 5
           done
-          echo "Production did not converge to complete ENTEGO v69 within the probe window"
+          echo "Production did not converge to complete ENTEGO v70 within the probe window"
           exit 1
 
       - name: Wait for directory timing instrumentation
