@@ -15,7 +15,7 @@ jobs:
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
       EXPECTED_CACHE: entego-v67
-      EXPECTED_ROUTE_MARKER: route-loader-flow.js?v=67
+      EXPECTED_INDEX_MARKER: entego_sw67_takeover
     steps:
       - name: Wait for v67 production marker
         shell: bash
@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/")"
           sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js")"
-          grep -q "$EXPECTED_ROUTE_MARKER" <<<"$index"
+          grep -q "$EXPECTED_INDEX_MARKER" <<<"$index"
           grep -q "$EXPECTED_CACHE" <<<"$sw"
           echo "Production shell markers match v67"
 
@@ -48,16 +48,20 @@ jobs:
         run: |
           set -euo pipefail
           probe() {
-            local path="$1"
+            local label="$1"
+            local path="$2"
             curl -sS -o /tmp/entego-probe-body \
               --connect-timeout 8 --max-time 20 \
-              -w "path=${path} status=%{http_code} dns=%{time_namelookup}s connect=%{time_connect}s tls=%{time_appconnect}s ttfb=%{time_starttransfer}s total=%{time_total}s bytes=%{size_download}\n" \
+              -w "label=${label} path=${path} status=%{http_code} dns=%{time_namelookup}s connect=%{time_connect}s tls=%{time_appconnect}s ttfb=%{time_starttransfer}s total=%{time_total}s bytes=%{size_download}\n" \
               "$BASE_URL$path"
           }
-          probe "/"
-          probe "/sw.js"
-          probe "/api/auth/me"
-          probe "/api/directory?limit=1"
+          probe "home-1" "/"
+          probe "home-2" "/"
+          probe "sw" "/sw.js"
+          probe "auth-1" "/api/auth/me"
+          probe "auth-2" "/api/auth/me"
+          probe "directory-1" "/api/directory?limit=1"
+          probe "directory-2" "/api/directory?limit=1"
 
       - name: Verify public directory response
         shell: bash
