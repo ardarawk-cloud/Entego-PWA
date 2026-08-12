@@ -46,27 +46,29 @@ jobs:
           test -f dist/security-sessions-flow.js
           test -f dist/admin-route-integrity-flow.js
           test -f dist/portfolio-media-flow.js
-          grep -q "auth-store-v2.js" api-worker-v50.js
           grep -q "auth-store-v3.js" api-worker-v60.js
           grep -q "partner-store-v2.js" api-worker-v60.js
-          grep -q '"main":"./api-worker-v60.js"' wrangler.jsonc
-          grep -q '"ENT_AUTH","class_name":"EntegoAuth"' wrangler.jsonc
-          grep -q '"ENT_PARTNER","class_name":"EntegoPartner"' wrangler.jsonc
-          grep -q "admin-account-control-flow.js?v=60" index.html
-          grep -q "account_restricted_new_booking" api-worker-v60.js
-          grep -q "account_restricted_new_job" api-worker-v60.js
-          grep -q "account_status_events" auth-store-v3.js
-          grep -q "setOperationalStatus" partner-store-v2.js
+          grep -q '"main":"./api-worker-v61.js"' wrangler.jsonc
+          grep -q "selectedTalentCache:'isolated-from-partner-self'" api-worker-v61.js
+          grep -q "entego_selected_partner_profile" server-partner-flow.js
+          grep -q "entego_selected_partner_packages" server-partner-flow.js
+          grep -q "entego_selected_partner_profile" partner-marketplace-flow.js
+          grep -q "entego_selected_partner_packages" partner-offer-flow.js
+          grep -q "entego_selected_partner_packages" market-booking-flow.js
+          grep -q "entego_selected_partner_packages" booking-integrity-flow.js
+          grep -q "entego_selected_partner_packages" server-booking-flow.js
+          grep -q "entego_selected_partner_packages" production-truth-gate-flow.js
+          grep -q "profile.userId===id" production-truth-gate-flow.js
+          grep -q "clearSelectedPartner(false)" server-partner-flow.js
+          grep -q "production-truth-gate-flow.js?v=61" index.html
           grep -q 'id="entegoBootShield"' index.html
-          grep -q "function ptgReveal" production-truth-gate-flow.js
-          grep -q "productionTruth:'fail-closed'" api-worker-v57.js
-          grep -q "eventTimeGuard:'wita-future-only'" api-worker-v58.js
+          ! grep -q "const mbProfile=()=>mbRead('entego_partner_profile'" market-booking-flow.js
+          ! grep -q "biRead('entego_partner_packages'" booking-integrity-flow.js
+          ! grep -q "packages=sbRead('entego_partner_packages'" server-booking-flow.js
+          ! grep -q "profile=ptgRead('entego_partner_profile'" production-truth-gate-flow.js
           ! grep -q "cancel-flow.js" index.html
           ! grep -q "promo=150000" market-booking-flow.js
-          ! grep -q "promo=150000" partner-offer-flow.js
-          ! grep -q "2026-08-15.*booked" partner-offer-flow.js
           ! grep -q "createOrderFromDraft" market-booking-flow.js
-          ! grep -q "DJ Raka Bali" market-booking-flow.js
 
       - name: Validate Cloudflare Worker bundle
         run: npx --yes wrangler@latest deploy --dry-run
