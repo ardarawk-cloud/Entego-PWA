@@ -1,5 +1,5 @@
-const CACHE="entego-v66";
-const SHELL=["/","/manifest.webmanifest?v=66","/icon-192.png?v=66","/icon-512.png?v=66","/icon-maskable-512.png?v=66","/apple-touch-icon.png?v=66","/logo-header.png?v=66","/production-truth-gate-flow.js?v=66","/production-guard-flow.js?v=66","/route-loader-flow.js?v=66"];
+const CACHE="entego-v67";
+const SHELL=["/","/manifest.webmanifest?v=67","/icon-192.png?v=67","/icon-512.png?v=67","/icon-maskable-512.png?v=67","/apple-touch-icon.png?v=67","/logo-header.png?v=67","/production-truth-gate-flow.js?v=67","/production-guard-flow.js?v=67","/route-loader-flow.js?v=67"];
 self.addEventListener("install",event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)))});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
 async function cacheFirst(request){const cache=await caches.open(CACHE),hit=await cache.match(request);if(hit)return hit;const response=await fetch(request);if(response.ok)cache.put(request,response.clone());return response}
