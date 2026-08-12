@@ -1,15 +1,17 @@
-const RL_VERSION='65';
+const RL_VERSION='66';
 const rlLoaded=new Set();
 let rlRoute='';
 const rlCurrent=()=>localStorage.getItem('entego_route')||'home';
 async function rlLoad(name){if(rlLoaded.has(name))return;rlLoaded.add(name);try{await import(`/${name}?v=${RL_VERSION}`)}catch(error){rlLoaded.delete(name);console.error('[ENTEGO lazy-load]',name,error)}}
 async function rlLoadMany(names){await Promise.all([...new Set(names)].map(rlLoad))}
+function rlIdle(fn,timeout=1000){if('requestIdleCallback'in window)requestIdleCallback(fn,{timeout});else setTimeout(fn,350)}
 const CUSTOMER_MARKET=['explore','detail','booking','checkout'];
 const CUSTOMER_ORDER=['orders','orderdetail','chatCustomer'];
 const PARTNER_BASE=['partner','partnerOnboarding','partnerProfile','partnerPackages','partnerCalendar','partnerPortfolio','partnerOrders','partnerOrderDetail','partnerChat'];
 const ADMIN_BASE=['admin','adminBookings','adminPayments','adminVerify','adminDispute','adminUsers','adminAccounts'];
 async function rlForRoute(route){
- const modules=['auth-flow.js','truthful-data-flow.js'];
+ const modules=['auth-flow.js'];
+ if(route!=='home')modules.push('truthful-data-flow.js');
  if(['profile','notifications','orders','partner','partnerOrders','admin','adminBookings','adminPayments','adminVerify'].includes(route))modules.push('action-center-flow.js');
  if(CUSTOMER_MARKET.includes(route))modules.push('server-partner-flow.js','partner-marketplace-flow.js','partner-offer-flow.js','market-booking-flow.js');
  if(['booking','checkout'].includes(route))modules.push('booking-integrity-flow.js','auth-booking-guard-flow.js','server-booking-flow.js','trust-flow.js');
@@ -27,8 +29,8 @@ async function rlForRoute(route){
  if(['adminPayments','adminBookings'].includes(route))modules.push('admin-payment-flow.js');
  if(route==='adminBookings')modules.push('support-center-flow.js','server-ops-flow.js');
  await rlLoadMany(modules);
+ if(route==='home')rlIdle(()=>{if(rlCurrent()==='home')void rlLoad('truthful-data-flow.js')},900);
 }
 async function rlRun(){const route=rlCurrent();if(route===rlRoute)return;rlRoute=route;await rlForRoute(route)}
-new MutationObserver(()=>{void rlRun()}).observe(document.documentElement,{childList:true,subtree:true});
-window.addEventListener('load',()=>void rlRun());
-void rlRun();
+let rlScheduled=false;function rlSchedule(){if(rlScheduled)return;rlScheduled=true;requestAnimationFrame(()=>{rlScheduled=false;void rlRun()})}
+new MutationObserver(rlSchedule).observe(document.documentElement,{childList:true,subtree:true});window.addEventListener('load',()=>void rlRun());void rlRun();
