@@ -11,7 +11,7 @@ permissions:
 jobs:
   android-boot:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 4
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
     steps:
@@ -36,7 +36,7 @@ jobs:
       - name: Probe first and second Android-like launch
         shell: bash
         run: |
-          node <<'NODE'
+          timeout 50s node <<'NODE'
           const { chromium } = require('playwright-core');
           (async()=>{
             const browser = await chromium.launch({headless:true, executablePath:process.env.CHROME, args:['--no-sandbox']});
@@ -55,7 +55,7 @@ jobs:
               page.on('requestfailed',r=>console.log(`[${label} requestfailed] ${r.url()} :: ${r.failure()?.errorText}`));
               page.on('framenavigated',f=>{if(f===page.mainFrame())console.log(`[${label} navigated] ${f.url()}`)});
               const started=Date.now();
-              await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:15000}).catch(e=>console.log(`[${label} goto interrupted] ${e.message}`));
+              await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:12000}).catch(e=>console.log(`[${label} goto interrupted] ${e.message}`));
               console.log(`[${label}] initial navigation phase ${Date.now()-started}ms`);
               await page.waitForTimeout(2200);
               const state=await page.evaluate(async()=>({
@@ -82,6 +82,6 @@ jobs:
             await browser.close();
             if(second.shield) process.exit(2);
             if(second.mainCount<1) process.exit(3);
-            if(!second.caches.includes('entego-v70')) process.exit(4);
+            if(!second.caches.includes('entego-v71')) process.exit(4);
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
