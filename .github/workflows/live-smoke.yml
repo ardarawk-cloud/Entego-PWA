@@ -14,46 +14,48 @@ jobs:
     timeout-minutes: 6
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
-      EXPECTED_CACHE: entego-v72
-      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='72'
+      EXPECTED_CACHE: entego-v73
+      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='73'
     steps:
-      - name: Wait for complete v72 production state
+      - name: Wait for complete v73 production state
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 18); do
             index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/" 2>/dev/null || true)"
             sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js" 2>/dev/null || true)"
-            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=72" 2>/dev/null || true)"
-            truth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/production-truth-gate-flow.js?v=72" 2>/dev/null || true)"
-            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=72" 2>/dev/null || true)"
+            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=73" 2>/dev/null || true)"
+            truth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/production-truth-gate-flow.js?v=73" 2>/dev/null || true)"
+            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=73" 2>/dev/null || true)"
             if grep -q "$EXPECTED_BOOT" <<<"$index" \
               && grep -q 'Pembaruan ENTEGO siap' <<<"$index" \
+              && grep -q 'Memulihkan modul ENTEGO' <<<"$index" \
               && grep -q 'ENTEGO belum selesai memuat halaman' <<<"$index" \
               && grep -q 'visibilitychange' <<<"$index" \
               && ! grep -q 'location.reload()' <<<"$index" \
               && ! grep -q 'sessionStorage' <<<"$index" \
               && grep -q "$EXPECTED_CACHE" <<<"$sw" \
-              && ! grep -q 'CLIENT_REFRESH_VERSION' <<<"$sw" \
               && ! grep -q 'client.navigate' <<<"$sw" \
-              && ! grep -q '__entego_sw' <<<"$sw" \
-              && grep -q 'cache.match(request)||await cache.match("/")' <<<"$sw" \
+              && grep -q 'networkFirstNavigation' <<<"$sw" \
+              && grep -q 'navigationPreload' <<<"$sw" \
+              && ! grep -q 'staleWhileRevalidate' <<<"$sw" \
               && grep -q 'entego-directory-v68' <<<"$sw" \
-              && grep -q 'account-route-fix-flow.js?v=72' <<<"$sw" \
-              && grep -q 'production-truth-gate-flow.js?v=72' <<<"$sw" \
-              && grep -q 'route-loader-flow.js?v=72' <<<"$sw" \
-              && grep -q "ARF_VERSION='72'" <<<"$account" \
+              && grep -q 'account-route-fix-flow.js?v=73' <<<"$sw" \
+              && grep -q 'production-truth-gate-flow.js?v=73' <<<"$sw" \
+              && grep -q 'route-loader-flow.js?v=73' <<<"$sw" \
+              && grep -q "ARF_VERSION='73'" <<<"$account" \
               && grep -q 'Metode Pembayaran' <<<"$account" \
               && grep -q 'ADMIN REQUIRED' <<<"$account" \
-              && grep -q 'ptgReveal' <<<"$truth" \
-              && grep -q "RL_VERSION='72'" <<<"$loader"; then
-              echo "Production exposes complete ENTEGO v72 account and refresh recovery state"
+              && grep -q 'ptgReady' <<<"$truth" \
+              && grep -q 'if(!ptgReady())return false' <<<"$truth" \
+              && grep -q "RL_VERSION='73'" <<<"$loader"; then
+              echo "Production exposes complete ENTEGO v73 network-first blank-screen recovery state"
               exit 0
             fi
-            echo "Attempt $attempt/18: production v72 assets are still converging"
+            echo "Attempt $attempt/18: production v73 assets are still converging"
             sleep 5
           done
-          echo "Production did not converge to complete ENTEGO v72 within the probe window"
+          echo "Production did not converge to complete ENTEGO v73 within the probe window"
           exit 1
 
       - name: Wait for directory timing instrumentation
@@ -87,6 +89,7 @@ jobs:
           probe "home-1" "/"
           probe "home-2" "/"
           probe "stale-v71-url" "/?__entego_sw=71"
+          probe "recovery-v72-url" "/?recover=72"
           probe "sw" "/sw.js"
           probe "auth-1" "/api/auth/me"
           probe "auth-2" "/api/auth/me"
