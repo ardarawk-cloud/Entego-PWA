@@ -14,20 +14,23 @@ jobs:
     timeout-minutes: 6
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
-      EXPECTED_CACHE: entego-v73
-      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='73'
+      EXPECTED_CACHE: entego-v74
+      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='74'
     steps:
-      - name: Wait for complete v73 production state
+      - name: Wait for complete v74 production state
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 18); do
             index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/" 2>/dev/null || true)"
             sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js" 2>/dev/null || true)"
-            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=73" 2>/dev/null || true)"
-            truth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/production-truth-gate-flow.js?v=73" 2>/dev/null || true)"
-            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=73" 2>/dev/null || true)"
+            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=74" 2>/dev/null || true)"
+            truth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/production-truth-gate-flow.js?v=74" 2>/dev/null || true)"
+            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=74" 2>/dev/null || true)"
             if grep -q "$EXPECTED_BOOT" <<<"$index" \
+              && grep -q "ENTEGO_ASSET_STRATEGY='stable-v74'" <<<"$index" \
+              && ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.js' <<<"$index" \
+              && ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.css' <<<"$index" \
               && grep -q 'Pembaruan ENTEGO siap' <<<"$index" \
               && grep -q 'Memulihkan modul ENTEGO' <<<"$index" \
               && grep -q 'ENTEGO belum selesai memuat halaman' <<<"$index" \
@@ -40,22 +43,23 @@ jobs:
               && grep -q 'navigationPreload' <<<"$sw" \
               && ! grep -q 'staleWhileRevalidate' <<<"$sw" \
               && grep -q 'entego-directory-v68' <<<"$sw" \
-              && grep -q 'account-route-fix-flow.js?v=73' <<<"$sw" \
-              && grep -q 'production-truth-gate-flow.js?v=73' <<<"$sw" \
-              && grep -q 'route-loader-flow.js?v=73' <<<"$sw" \
-              && grep -q "ARF_VERSION='73'" <<<"$account" \
+              && grep -q 'account-route-fix-flow.js?v=74' <<<"$sw" \
+              && grep -q 'production-truth-gate-flow.js?v=74' <<<"$sw" \
+              && grep -q 'route-loader-flow.js?v=74' <<<"$sw" \
+              && grep -q "ARF_VERSION='74'" <<<"$account" \
               && grep -q 'Metode Pembayaran' <<<"$account" \
               && grep -q 'ADMIN REQUIRED' <<<"$account" \
               && grep -q 'ptgReady' <<<"$truth" \
               && grep -q 'if(!ptgReady())return false' <<<"$truth" \
-              && grep -q "RL_VERSION='73'" <<<"$loader"; then
-              echo "Production exposes complete ENTEGO v73 network-first blank-screen recovery state"
+              && grep -q "RL_VERSION='74'" <<<"$loader"; then
+              echo "Production exposes ENTEGO v74 stable asset architecture"
+              echo "$index" | grep -oE '/assets/[^" ]+\.(js|css)' | sort -u || true
               exit 0
             fi
-            echo "Attempt $attempt/18: production v73 assets are still converging"
+            echo "Attempt $attempt/18: production v74 assets are still converging"
             sleep 5
           done
-          echo "Production did not converge to complete ENTEGO v73 within the probe window"
+          echo "Production did not converge to complete ENTEGO v74 within the probe window"
           exit 1
 
       - name: Wait for directory timing instrumentation
@@ -90,6 +94,7 @@ jobs:
           probe "home-2" "/"
           probe "stale-v71-url" "/?__entego_sw=71"
           probe "recovery-v72-url" "/?recover=72"
+          probe "recovery-v73-url" "/?recover=73"
           probe "sw" "/sw.js"
           probe "auth-1" "/api/auth/me"
           probe "auth-2" "/api/auth/me"
