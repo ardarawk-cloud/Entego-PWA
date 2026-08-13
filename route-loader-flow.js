@@ -1,4 +1,4 @@
-const RL_VERSION='72';
+const RL_VERSION='73';
 const rlLoaded=new Set();
 let rlRoute='';
 const rlCurrent=()=>localStorage.getItem('entego_route')||'home';
