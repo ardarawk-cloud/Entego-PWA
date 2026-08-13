@@ -1,0 +1,47 @@
+name: ENTEGO CLIENT RECOVERY SMOKE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      BASE_URL: https://entego-pwa.ardarawk.workers.dev
+    steps:
+      - name: Wait for recovery endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 18); do
+            headers="$(mktemp)"
+            body="$(mktemp)"
+            code="$(curl -sS -D "$headers" -o "$body" -w '%{http_code}' --connect-timeout 8 --max-time 15 "$BASE_URL/api/client-recovery?stay=1" || true)"
+            if [ "$code" = "200" ] \
+              && grep -q 'Memulihkan ENTEGO' "$body" \
+              && grep -q 'serviceWorker.getRegistrations' "$body" \
+              && grep -q "k.startsWith('entego-')" "$body" \
+              && grep -q 'client-recovered=75' "$body" \
+              && grep -qi '^cache-control: no-store' "$headers"; then
+              echo "ENTEGO client recovery endpoint is LIVE"
+              exit 0
+            fi
+            echo "Attempt $attempt/18: recovery endpoint is still converging"
+            sleep 5
+          done
+          echo "Recovery endpoint did not become live within probe window"
+          exit 1
+
+      - name: Verify health advertises recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/api/health")"
+          grep -q '"clientRecovery":"v75-sw-escape"' <<<"$body"
+          echo "Health endpoint advertises v75 client recovery"
