@@ -14,52 +14,47 @@ jobs:
     timeout-minutes: 6
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
-      EXPECTED_CACHE: entego-v74
-      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='74'
+      EXPECTED_CACHE: entego-v75
+      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='75'
     steps:
-      - name: Wait for complete v74 production state
+      - name: Wait for complete v75 production state
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 18); do
             index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/" 2>/dev/null || true)"
             sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js" 2>/dev/null || true)"
-            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=74" 2>/dev/null || true)"
-            truth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/production-truth-gate-flow.js?v=74" 2>/dev/null || true)"
-            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=74" 2>/dev/null || true)"
+            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=75" 2>/dev/null || true)"
+            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=75" 2>/dev/null || true)"
+            entry="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/assets/index.js" 2>/dev/null || true)"
+            css="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/assets/index.css" 2>/dev/null || true)"
             if grep -q "$EXPECTED_BOOT" <<<"$index" \
-              && grep -q "ENTEGO_ASSET_STRATEGY='stable-v74'" <<<"$index" \
+              && grep -q "ENTEGO_ASSET_STRATEGY='static-shell-stable-v75'" <<<"$index" \
+              && grep -q 'id="entegoStaticShell"' <<<"$index" \
+              && grep -q 'Koneksi lambat' <<<"$index" \
+              && ! grep -q 'id="entegoBootShield"' <<<"$index" \
               && ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.js' <<<"$index" \
               && ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.css' <<<"$index" \
-              && grep -q 'Pembaruan ENTEGO siap' <<<"$index" \
-              && grep -q 'Memulihkan modul ENTEGO' <<<"$index" \
-              && grep -q 'ENTEGO belum selesai memuat halaman' <<<"$index" \
-              && grep -q 'visibilitychange' <<<"$index" \
-              && ! grep -q 'location.reload()' <<<"$index" \
-              && ! grep -q 'sessionStorage' <<<"$index" \
               && grep -q "$EXPECTED_CACHE" <<<"$sw" \
-              && ! grep -q 'client.navigate' <<<"$sw" \
-              && grep -q 'networkFirstNavigation' <<<"$sw" \
-              && grep -q 'navigationPreload' <<<"$sw" \
-              && ! grep -q 'staleWhileRevalidate' <<<"$sw" \
+              && grep -q '"/assets/index.js"' <<<"$sw" \
+              && grep -q '"/assets/index.css"' <<<"$sw" \
+              && grep -q 'appShellNavigation' <<<"$sw" \
+              && grep -q 'event.waitUntil(refresh)' <<<"$sw" \
+              && ! grep -q 'networkFirstNavigation' <<<"$sw" \
               && grep -q 'entego-directory-v68' <<<"$sw" \
-              && grep -q 'account-route-fix-flow.js?v=74' <<<"$sw" \
-              && grep -q 'production-truth-gate-flow.js?v=74' <<<"$sw" \
-              && grep -q 'route-loader-flow.js?v=74' <<<"$sw" \
-              && grep -q "ARF_VERSION='74'" <<<"$account" \
-              && grep -q 'Metode Pembayaran' <<<"$account" \
-              && grep -q 'ADMIN REQUIRED' <<<"$account" \
-              && grep -q 'ptgReady' <<<"$truth" \
-              && grep -q 'if(!ptgReady())return false' <<<"$truth" \
-              && grep -q "RL_VERSION='74'" <<<"$loader"; then
-              echo "Production exposes ENTEGO v74 stable asset architecture"
-              echo "$index" | grep -oE '/assets/[^" ]+\.(js|css)' | sort -u || true
+              && grep -q 'account-route-fix-flow.js?v=75' <<<"$sw" \
+              && grep -q 'route-loader-flow.js?v=75' <<<"$sw" \
+              && grep -q "ARF_VERSION='75'" <<<"$account" \
+              && grep -q "RL_VERSION='75'" <<<"$loader" \
+              && test -n "$entry" \
+              && test -n "$css"; then
+              echo "Production exposes ENTEGO v75 static-shell architecture"
               exit 0
             fi
-            echo "Attempt $attempt/18: production v74 assets are still converging"
+            echo "Attempt $attempt/18: production v75 assets are still converging"
             sleep 5
           done
-          echo "Production did not converge to complete ENTEGO v74 within the probe window"
+          echo "Production did not converge to complete ENTEGO v75 within the probe window"
           exit 1
 
       - name: Wait for directory timing instrumentation
@@ -85,21 +80,17 @@ jobs:
           probe() {
             local label="$1"
             local path="$2"
-            curl -sS -o /tmp/entego-probe-body \
-              --connect-timeout 8 --max-time 20 \
-              -w "label=${label} path=${path} status=%{http_code} dns=%{time_namelookup}s connect=%{time_connect}s tls=%{time_appconnect}s ttfb=%{time_starttransfer}s total=%{time_total}s bytes=%{size_download}\n" \
+            curl -sS -o /tmp/entego-probe-body --connect-timeout 8 --max-time 20 \
+              -w "label=${label} path=${path} status=%{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s bytes=%{size_download}\n" \
               "$BASE_URL$path"
           }
           probe "home-1" "/"
           probe "home-2" "/"
-          probe "stale-v71-url" "/?__entego_sw=71"
-          probe "recovery-v72-url" "/?recover=72"
-          probe "recovery-v73-url" "/?recover=73"
+          probe "entry" "/assets/index.js"
+          probe "css" "/assets/index.css"
           probe "sw" "/sw.js"
-          probe "auth-1" "/api/auth/me"
-          probe "auth-2" "/api/auth/me"
-          probe "directory-1" "/api/directory?limit=1"
-          probe "directory-2" "/api/directory?limit=1"
+          probe "auth" "/api/auth/me"
+          probe "directory" "/api/directory?limit=1"
 
       - name: Verify public directory response
         shell: bash
