@@ -11,7 +11,7 @@ permissions:
 jobs:
   android-boot:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 5
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
     steps:
@@ -33,55 +33,51 @@ jobs:
           elif command -v chromium >/dev/null 2>&1; then echo "CHROME=$(command -v chromium)" >> "$GITHUB_ENV"; \
           else echo 'No system Chrome found'; exit 1; fi
 
-      - name: Probe first and second Android-like launch
+      - name: Probe Android launch refresh and account menus
         shell: bash
         run: |
-          timeout 50s node <<'NODE'
+          timeout 70s node <<'NODE'
           const { chromium } = require('playwright-core');
           (async()=>{
             const browser = await chromium.launch({headless:true, executablePath:process.env.CHROME, args:['--no-sandbox']});
             const context = await browser.newContext({
-              viewport:{width:412,height:915},
-              isMobile:true,
-              hasTouch:true,
-              deviceScaleFactor:2.625,
+              viewport:{width:412,height:915},isMobile:true,hasTouch:true,deviceScaleFactor:2.625,
               userAgent:'Mozilla/5.0 (Linux; Android 14; Infinix X6739) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36'
             });
-
-            async function launch(label){
-              const page = await context.newPage();
-              page.on('console',m=>console.log(`[${label} console ${m.type()}] ${m.text()}`));
+            const snapshot=page=>page.evaluate(async()=>({
+              href:location.href,shield:!!document.querySelector('#entegoBootShield'),
+              bootText:document.querySelector('#entegoBootText')?.textContent||'',
+              appVisibility:document.querySelector('#app')?getComputedStyle(document.querySelector('#app')).visibility:'missing',
+              appChildren:document.querySelector('#app')?.childElementCount||0,
+              mainCount:document.querySelectorAll('main.content').length,
+              route:localStorage.getItem('entego_route'),
+              controller:navigator.serviceWorker?.controller?.scriptURL||'',
+              caches:('caches'in window)?await caches.keys():[]
+            }));
+            async function open(label,url='/'){
+              const page=await context.newPage();
               page.on('pageerror',e=>console.log(`[${label} pageerror] ${e.message}`));
-              page.on('requestfailed',r=>console.log(`[${label} requestfailed] ${r.url()} :: ${r.failure()?.errorText}`));
-              page.on('framenavigated',f=>{if(f===page.mainFrame())console.log(`[${label} navigated] ${f.url()}`)});
-              const started=Date.now();
-              await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:12000}).catch(e=>console.log(`[${label} goto interrupted] ${e.message}`));
-              console.log(`[${label}] initial navigation phase ${Date.now()-started}ms`);
-              await page.waitForTimeout(2200);
-              const state=await page.evaluate(async()=>({
-                href:location.href,
-                shield:!!document.querySelector('#entegoBootShield'),
-                bootText:document.querySelector('#entegoBootText')?.textContent||'',
-                appVisibility:document.querySelector('#app')?getComputedStyle(document.querySelector('#app')).visibility:'missing',
-                appChildren:document.querySelector('#app')?.childElementCount||0,
-                mainCount:document.querySelectorAll('main.content').length,
-                route:localStorage.getItem('entego_route'),
-                controller:navigator.serviceWorker?.controller?.scriptURL||'',
-                caches:('caches'in window)?await caches.keys():[]
-              }));
-              console.log(`[${label} settled] ${JSON.stringify(state)}`);
-              await page.close();
-              return state;
+              page.on('requestfailed',r=>console.log(`[${label} failed] ${r.url()} :: ${r.failure()?.errorText}`));
+              const start=Date.now();await page.goto(process.env.BASE_URL+url,{waitUntil:'domcontentloaded',timeout:12000});
+              await page.waitForTimeout(2200);const state=await snapshot(page);console.log(`[${label}] ${Date.now()-start}ms ${JSON.stringify(state)}`);return {page,state};
             }
+            let x=await open('first');if(x.state.shield||x.state.mainCount<1)process.exit(2);await x.page.close();
+            await new Promise(r=>setTimeout(r,400));
+            x=await open('second');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v72'))process.exit(3);await x.page.close();
+            x=await open('stale-v71','/?__entego_sw=71');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v72'))process.exit(4);await x.page.close();
 
-            const first=await launch('first');
-            await new Promise(r=>setTimeout(r,500));
-            const second=await launch('second');
-            console.log('FIRST_FINAL='+JSON.stringify(first));
-            console.log('SECOND_FINAL='+JSON.stringify(second));
+            const page=await context.newPage();
+            await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:12000});
+            await page.evaluate(()=>localStorage.setItem('entego_route','profile'));
+            await page.reload({waitUntil:'domcontentloaded',timeout:12000});await page.waitForTimeout(1800);
+            let state=await snapshot(page);console.log('[profile refresh] '+JSON.stringify(state));if(state.shield||state.mainCount<1)process.exit(5);
+            const payment=page.locator('.card').filter({hasText:'Metode pembayaran'}).first();if(await payment.count()!==1)process.exit(6);await payment.click();await page.waitForTimeout(150);
+            let notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Metode Pembayaran'))process.exit(7);
+            if(await page.evaluate(()=>localStorage.getItem('entego_route'))!=='profile')process.exit(8);
+            await page.locator('#arfClose').click();
+            const admin=page.locator('.card').filter({hasText:'Admin Control Center'}).first();if(await admin.count()!==1)process.exit(9);await admin.click();await page.waitForTimeout(150);
+            notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Akses Admin'))process.exit(10);
+            console.log('ACCOUNT_MENU_TEST=PASS');
             await browser.close();
-            if(second.shield) process.exit(2);
-            if(second.mainCount<1) process.exit(3);
-            if(!second.caches.includes('entego-v71')) process.exit(4);
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
