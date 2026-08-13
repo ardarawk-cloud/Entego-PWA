@@ -10,14 +10,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ENTEGO" />
   <title>ENTEGO</title>
-  <link rel="manifest" href="/manifest.webmanifest?v=73"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=73"><link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=73"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=73">
+  <link rel="manifest" href="/manifest.webmanifest?v=74"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=74"><link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=74"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=74">
   <style>#entegoBootShield{position:fixed;inset:0;z-index:99999;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .1s ease}#entegoBootShield .boot-inner{width:min(86vw,340px);text-align:center}#entegoBootShield img{width:72px;height:72px;object-fit:contain;border-radius:18px;margin-bottom:14px}#entegoBootShield b{display:block;font-size:23px;letter-spacing:.08em}#entegoBootShield span{display:block;margin-top:8px;font-size:13px;line-height:1.5;opacity:.75}</style>
 </head>
 <body>
-  <div id="entegoBootShield"><div class="boot-inner"><img src="/logo-header.png?v=73" alt="ENTEGO"><b>ENTEGO</b><span id="entegoBootText">Menyiapkan ENTEGO…</span></div></div><div id="app" style="visibility:hidden"></div>
+  <div id="entegoBootShield"><div class="boot-inner"><img src="/logo-header.png?v=74" alt="ENTEGO"><b>ENTEGO</b><span id="entegoBootText">Menyiapkan ENTEGO…</span></div></div><div id="app" style="visibility:hidden"></div>
   <script>
     (()=>{
-      const ENTEGO_BOOT_VERSION='73';
+      const ENTEGO_BOOT_VERSION='74';
+      const ENTEGO_ASSET_STRATEGY='stable-v74';
       const app=()=>document.getElementById('app');
       const shield=()=>document.getElementById('entegoBootShield');
       const text=()=>document.getElementById('entegoBootText');
@@ -25,7 +26,7 @@
       const storageSet=(key,value)=>{try{localStorage.setItem(key,value)}catch{}};
       const reveal=()=>{const a=app(),s=shield();if(a)a.style.visibility='visible';if(s){s.style.opacity='0';setTimeout(()=>s.remove(),120)}};
       const sanitizeHomeFallback=()=>{if(storageGet('entego_route','home')!=='home')return false;const main=document.querySelector('main.content');if(!main)return false;[...main.querySelectorAll('.banner')].forEach(b=>{if(/diskon booking pertama|ENTEGO10/i.test(b.textContent))b.style.display='none'});const sec=[...main.querySelectorAll('section.section')].find(s=>s.querySelector('.section-head h2')?.textContent.trim()==='Rekomendasi');if(sec){const rail=sec.querySelector('.hscroll');if(rail)rail.innerHTML='<div class="card"><span class="meta">Menyiapkan Talent terverifikasi…</span></div>'}return true};
-      const recovery=()=>{const a=app();if(!a)return;const route=storageGet('entego_route','home');a.innerHTML='<div style="min-height:100dvh;background:#f8fafc;color:#0f172a;padding:24px;display:flex;align-items:center;justify-content:center"><div style="width:min(100%,420px);background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:20px"><b style="font-size:20px">ENTEGO belum selesai memuat halaman</b><p style="color:#64748b;line-height:1.55">Tampilan dihentikan agar tidak menampilkan data prototype sebagai data production. Kembali ke Beranda lalu buka menu lagi.</p><button id="entegoRecoverHome" style="width:100%;border:0;border-radius:14px;padding:13px;background:#0f172a;color:white;font-weight:700">Kembali ke Beranda</button><div style="font-size:11px;color:#94a3b8;margin-top:10px">Recovery v'+ENTEGO_BOOT_VERSION+' • route '+String(route).replace(/[<>]/g,'')+'</div></div></div>';reveal();a.querySelector('#entegoRecoverHome').onclick=()=>{storageSet('entego_route','home');location.replace('/?recover='+ENTEGO_BOOT_VERSION)}};
+      const recovery=()=>{const a=app();if(!a)return;const route=storageGet('entego_route','home');a.innerHTML='<div style="min-height:100dvh;background:#f8fafc;color:#0f172a;padding:24px;display:flex;align-items:center;justify-content:center"><div style="width:min(100%,420px);background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:20px"><b style="font-size:20px">ENTEGO belum selesai memuat halaman</b><p style="color:#64748b;line-height:1.55">Tampilan dihentikan agar tidak menampilkan data prototype sebagai data production. Kembali ke Beranda lalu buka menu lagi.</p><button id="entegoRecoverHome" style="width:100%;border:0;border-radius:14px;padding:13px;background:#0f172a;color:white;font-weight:700">Kembali ke Beranda</button><div style="font-size:11px;color:#94a3b8;margin-top:10px">Recovery v'+ENTEGO_BOOT_VERSION+' • stable assets • route '+String(route).replace(/[<>]/g,'')+'</div></div></div>';reveal();a.querySelector('#entegoRecoverHome').onclick=()=>{storageSet('entego_route','home');location.replace('/?recover='+ENTEGO_BOOT_VERSION)}};
       const noteBootFailure=()=>{const x=text();if(x)x.textContent='Memulihkan modul ENTEGO…'};
       window.addEventListener('error',e=>{if(e.target?.tagName==='SCRIPT'||e.target?.tagName==='LINK')noteBootFailure()},true);
       window.addEventListener('unhandledrejection',noteBootFailure);
@@ -38,8 +39,8 @@
     })();
   </script>
   <script type="module" src="/main.js"></script>
-  <script type="module" src="/account-route-fix-flow.js?v=73"></script>
-  <script type="module" src="/production-truth-gate-flow.js?v=73"></script>
-  <script type="module" src="/production-guard-flow.js?v=73"></script>
-  <script type="module" src="/route-loader-flow.js?v=73"></script>
+  <script type="module" src="/account-route-fix-flow.js?v=74"></script>
+  <script type="module" src="/production-truth-gate-flow.js?v=74"></script>
+  <script type="module" src="/production-guard-flow.js?v=74"></script>
+  <script type="module" src="/route-loader-flow.js?v=74"></script>
 </body></html>
