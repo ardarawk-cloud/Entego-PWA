@@ -10,37 +10,32 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ENTEGO" />
   <title>ENTEGO</title>
-  <link rel="manifest" href="/manifest.webmanifest?v=74"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=74"><link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=74"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=74">
-  <style>#entegoBootShield{position:fixed;inset:0;z-index:99999;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .1s ease}#entegoBootShield .boot-inner{width:min(86vw,340px);text-align:center}#entegoBootShield img{width:72px;height:72px;object-fit:contain;border-radius:18px;margin-bottom:14px}#entegoBootShield b{display:block;font-size:23px;letter-spacing:.08em}#entegoBootShield span{display:block;margin-top:8px;font-size:13px;line-height:1.5;opacity:.75}</style>
+  <link rel="manifest" href="/manifest.webmanifest?v=75"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=75"><link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=75"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=75">
+  <style>
+    html,body{margin:0;background:#f8fafc;color:#0f172a;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}*{box-sizing:border-box}
+    #app{min-height:100dvh;visibility:visible}.entego-static-shell{min-height:100dvh;background:#f8fafc;padding-bottom:72px}.ess-top{background:#0f172a;color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 18px}.ess-brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.08em;font-size:20px}.ess-brand img{width:36px;height:36px;border-radius:10px}.ess-search{margin-top:16px;background:#fff;color:#64748b;border-radius:14px;padding:12px 14px;font-size:14px}.ess-main{padding:18px}.ess-card{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:18px}.ess-card h1{font-size:22px;line-height:1.25;margin:0 0 8px}.ess-card p{margin:0;color:#64748b;line-height:1.5}.ess-status{display:flex;align-items:center;gap:9px;margin-top:16px;color:#475569;font-size:13px}.ess-dot{width:8px;height:8px;border-radius:99px;background:#f97316;animation:essPulse 1.2s infinite}.ess-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:16px}.ess-chip{background:#fff;border:1px solid #e2e8f0;border-radius:14px;text-align:center;padding:13px 5px;font-size:12px;color:#475569}.ess-bottom{position:fixed;left:0;right:0;bottom:0;height:64px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid #e2e8f0;display:grid;grid-template-columns:repeat(5,1fr);z-index:20}.ess-nav{display:flex;align-items:center;justify-content:center;font-size:11px;color:#64748b}.ess-nav:first-child{color:#0f172a;font-weight:700}@keyframes essPulse{50%{opacity:.35}}
+  </style>
 </head>
 <body>
-  <div id="entegoBootShield"><div class="boot-inner"><img src="/logo-header.png?v=74" alt="ENTEGO"><b>ENTEGO</b><span id="entegoBootText">Menyiapkan ENTEGO…</span></div></div><div id="app" style="visibility:hidden"></div>
+  <div id="app"><div id="entegoStaticShell" class="entego-static-shell">
+    <header class="ess-top"><div class="ess-brand"><img src="/logo-header.png?v=75" alt="ENTEGO"><span>ENTEGO</span></div><div class="ess-search">Cari DJ, sound, mobil, MC...</div></header>
+    <main class="ess-main"><section class="ess-card"><h1>Entertainment & Rental Marketplace</h1><p>ENTEGO siap digunakan. Data Talent, booking, pembayaran, dan akun dimuat aman dari server setelah aplikasi aktif.</p><div class="ess-status"><span class="ess-dot"></span><span id="entegoShellStatus">Menyiapkan fitur…</span></div></section><div class="ess-grid"><div class="ess-chip">🎧<br>DJ</div><div class="ess-chip">🎤<br>MC</div><div class="ess-chip">🎸<br>Band</div><div class="ess-chip">🔊<br>Sound</div></div></main>
+    <nav class="ess-bottom"><div class="ess-nav">Home</div><div class="ess-nav">Cari</div><div class="ess-nav">Order</div><div class="ess-nav">Favorit</div><div class="ess-nav">Akun</div></nav>
+  </div></div>
   <script>
     (()=>{
-      const ENTEGO_BOOT_VERSION='74';
-      const ENTEGO_ASSET_STRATEGY='stable-v74';
-      const app=()=>document.getElementById('app');
-      const shield=()=>document.getElementById('entegoBootShield');
-      const text=()=>document.getElementById('entegoBootText');
-      const storageGet=(key,fallback='')=>{try{return localStorage.getItem(key)||fallback}catch{return fallback}};
-      const storageSet=(key,value)=>{try{localStorage.setItem(key,value)}catch{}};
-      const reveal=()=>{const a=app(),s=shield();if(a)a.style.visibility='visible';if(s){s.style.opacity='0';setTimeout(()=>s.remove(),120)}};
-      const sanitizeHomeFallback=()=>{if(storageGet('entego_route','home')!=='home')return false;const main=document.querySelector('main.content');if(!main)return false;[...main.querySelectorAll('.banner')].forEach(b=>{if(/diskon booking pertama|ENTEGO10/i.test(b.textContent))b.style.display='none'});const sec=[...main.querySelectorAll('section.section')].find(s=>s.querySelector('.section-head h2')?.textContent.trim()==='Rekomendasi');if(sec){const rail=sec.querySelector('.hscroll');if(rail)rail.innerHTML='<div class="card"><span class="meta">Menyiapkan Talent terverifikasi…</span></div>'}return true};
-      const recovery=()=>{const a=app();if(!a)return;const route=storageGet('entego_route','home');a.innerHTML='<div style="min-height:100dvh;background:#f8fafc;color:#0f172a;padding:24px;display:flex;align-items:center;justify-content:center"><div style="width:min(100%,420px);background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:20px"><b style="font-size:20px">ENTEGO belum selesai memuat halaman</b><p style="color:#64748b;line-height:1.55">Tampilan dihentikan agar tidak menampilkan data prototype sebagai data production. Kembali ke Beranda lalu buka menu lagi.</p><button id="entegoRecoverHome" style="width:100%;border:0;border-radius:14px;padding:13px;background:#0f172a;color:white;font-weight:700">Kembali ke Beranda</button><div style="font-size:11px;color:#94a3b8;margin-top:10px">Recovery v'+ENTEGO_BOOT_VERSION+' • stable assets • route '+String(route).replace(/[<>]/g,'')+'</div></div></div>';reveal();a.querySelector('#entegoRecoverHome').onclick=()=>{storageSet('entego_route','home');location.replace('/?recover='+ENTEGO_BOOT_VERSION)}};
-      const noteBootFailure=()=>{const x=text();if(x)x.textContent='Memulihkan modul ENTEGO…'};
-      window.addEventListener('error',e=>{if(e.target?.tagName==='SCRIPT'||e.target?.tagName==='LINK')noteBootFailure()},true);
-      window.addEventListener('unhandledrejection',noteBootFailure);
-      let ticks=0;
-      const watchdog=setInterval(()=>{const s=shield();if(!s){clearInterval(watchdog);return}const a=app(),route=storageGet('entego_route','home');if(a?.childElementCount&&route==='home'&&sanitizeHomeFallback()){clearInterval(watchdog);reveal();return}if(a?.childElementCount&&document.querySelector('main.content')){clearInterval(watchdog);reveal();return}ticks+=1;if(ticks===12){const x=text();if(x)x.textContent='Memulihkan tampilan ENTEGO…'}if(ticks>=30){clearInterval(watchdog);recovery()}},100);
-      if('serviceWorker' in navigator){
-        navigator.serviceWorker.addEventListener('controllerchange',()=>{const x=text();if(x)x.textContent='Pembaruan ENTEGO siap…'});
-        navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})})}).catch(()=>{});
-      }
+      const ENTEGO_BOOT_VERSION='75';
+      const ENTEGO_ASSET_STRATEGY='static-shell-stable-v75';
+      const status=()=>document.getElementById('entegoShellStatus');
+      setTimeout(()=>{const s=status();if(s&&document.getElementById('entegoStaticShell'))s.textContent='Koneksi lambat — tampilan tetap tersedia, fitur sedang dimuat…'},3000);
+      window.addEventListener('error',e=>{if((e.target?.tagName==='SCRIPT'||e.target?.tagName==='LINK')&&status())status().textContent='Modul belum termuat. ENTEGO akan mencoba lagi saat koneksi tersedia.'},true);
+      window.addEventListener('unhandledrejection',()=>{if(status())status().textContent='Sebagian fitur belum termuat. Tampilan utama tetap aman.'});
+      if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})})}).catch(()=>{})}
     })();
   </script>
   <script type="module" src="/main.js"></script>
-  <script type="module" src="/account-route-fix-flow.js?v=74"></script>
-  <script type="module" src="/production-truth-gate-flow.js?v=74"></script>
-  <script type="module" src="/production-guard-flow.js?v=74"></script>
-  <script type="module" src="/route-loader-flow.js?v=74"></script>
+  <script type="module" src="/account-route-fix-flow.js?v=75"></script>
+  <script type="module" src="/production-truth-gate-flow.js?v=75"></script>
+  <script type="module" src="/production-guard-flow.js?v=75"></script>
+  <script type="module" src="/route-loader-flow.js?v=75"></script>
 </body></html>
