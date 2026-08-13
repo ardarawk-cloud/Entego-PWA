@@ -33,7 +33,7 @@ jobs:
           elif command -v chromium >/dev/null 2>&1; then echo "CHROME=$(command -v chromium)" >> "$GITHUB_ENV"; \
           else echo 'No system Chrome found'; exit 1; fi
 
-      - name: Probe Android launch refresh recovery and account menus
+      - name: Probe Android stable asset boot refresh recovery and account menus
         shell: bash
         run: |
           timeout 90s node <<'NODE'
@@ -51,32 +51,35 @@ jobs:
               recovery:(document.body.innerText||'').includes('ENTEGO belum selesai memuat halaman'),
               route:localStorage.getItem('entego_route'),
               controller:navigator.serviceWorker?.controller?.scriptURL||'',
-              caches:('caches'in window)?await caches.keys():[]
+              caches:('caches'in window)?await caches.keys():[],
+              assets:[...document.querySelectorAll('script[src],link[rel="stylesheet"]')].map(x=>x.src||x.href).filter(Boolean)
             }));
+            const hashed=/\/assets\/[^/?#]+-[A-Za-z0-9_-]{6,}\.(js|css)(?:[?#]|$)/;
             async function open(label,url='/'){
               const page=await context.newPage();
               page.on('pageerror',e=>console.log(`[${label} pageerror] ${e.message}`));
               page.on('requestfailed',r=>console.log(`[${label} failed] ${r.url()} :: ${r.failure()?.errorText}`));
               const start=Date.now();await page.goto(process.env.BASE_URL+url,{waitUntil:'domcontentloaded',timeout:12000});
-              await page.waitForTimeout(2200);const state=await snapshot(page);console.log(`[${label}] ${Date.now()-start}ms ${JSON.stringify(state)}`);return {page,state};
+              await page.waitForTimeout(2200);const state=await snapshot(page);console.log(`[${label}] ${Date.now()-start}ms ${JSON.stringify(state)}`);if(state.assets.some(x=>hashed.test(x)))process.exit(20);return {page,state};
             }
             let x=await open('first');if(x.state.shield||x.state.mainCount<1)process.exit(2);await x.page.close();
             await new Promise(r=>setTimeout(r,400));
-            x=await open('second');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v73'))process.exit(3);await x.page.close();
-            x=await open('stale-v71','/?__entego_sw=71');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v73'))process.exit(4);await x.page.close();
-            x=await open('recovery-v72','/?recover=72');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v73'))process.exit(5);await x.page.close();
+            x=await open('second');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v74'))process.exit(3);await x.page.close();
+            x=await open('stale-v71','/?__entego_sw=71');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v74'))process.exit(4);await x.page.close();
+            x=await open('recovery-v72','/?recover=72');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v74'))process.exit(5);await x.page.close();
+            x=await open('recovery-v73','/?recover=73');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v74'))process.exit(6);await x.page.close();
 
             const page=await context.newPage();
             await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:12000});
             await page.evaluate(()=>localStorage.setItem('entego_route','profile'));
             await page.reload({waitUntil:'domcontentloaded',timeout:12000});await page.waitForTimeout(1800);
-            let state=await snapshot(page);console.log('[profile refresh] '+JSON.stringify(state));if(state.shield||state.mainCount<1)process.exit(6);
-            const payment=page.locator('.card').filter({hasText:'Metode pembayaran'}).first();if(await payment.count()!==1)process.exit(7);await payment.click();await page.waitForTimeout(150);
-            let notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Metode Pembayaran'))process.exit(8);
-            if(await page.evaluate(()=>localStorage.getItem('entego_route'))!=='profile')process.exit(9);
+            let state=await snapshot(page);console.log('[profile refresh] '+JSON.stringify(state));if(state.shield||state.mainCount<1||state.assets.some(x=>hashed.test(x)))process.exit(7);
+            const payment=page.locator('.card').filter({hasText:'Metode pembayaran'}).first();if(await payment.count()!==1)process.exit(8);await payment.click();await page.waitForTimeout(150);
+            let notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Metode Pembayaran'))process.exit(9);
+            if(await page.evaluate(()=>localStorage.getItem('entego_route'))!=='profile')process.exit(10);
             await page.locator('#arfClose').click();
-            const admin=page.locator('.card').filter({hasText:'Admin Control Center'}).first();if(await admin.count()!==1)process.exit(10);await admin.click();await page.waitForTimeout(150);
-            notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Akses Admin'))process.exit(11);
+            const admin=page.locator('.card').filter({hasText:'Admin Control Center'}).first();if(await admin.count()!==1)process.exit(11);await admin.click();await page.waitForTimeout(150);
+            notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Akses Admin'))process.exit(12);
             console.log('ACCOUNT_MENU_TEST=PASS');
             await page.close();
 
@@ -84,10 +87,10 @@ jobs:
             const broken=await brokenContext.newPage();
             await broken.route('**/*',route=>{const req=route.request(),u=new URL(req.url());if(req.resourceType()==='script'&&u.origin===new URL(process.env.BASE_URL).origin&&u.pathname.startsWith('/assets/'))return route.abort();return route.continue()});
             broken.on('requestfailed',r=>console.log(`[broken-entry failed] ${r.url()} :: ${r.failure()?.errorText}`));
-            await broken.goto(process.env.BASE_URL+'/?blank-screen-test=73',{waitUntil:'domcontentloaded',timeout:12000});
+            await broken.goto(process.env.BASE_URL+'/?blank-screen-test=74',{waitUntil:'domcontentloaded',timeout:12000});
             await broken.waitForTimeout(3600);
             state=await snapshot(broken);console.log('[broken-entry recovery] '+JSON.stringify(state));
-            if(!state.recovery||state.appChildren<1||state.appVisibility!=='visible')process.exit(12);
+            if(!state.recovery||state.appChildren<1||state.appVisibility!=='visible')process.exit(13);
             console.log('BLANK_SCREEN_RECOVERY_TEST=PASS');
             await brokenContext.close();
             await browser.close();
