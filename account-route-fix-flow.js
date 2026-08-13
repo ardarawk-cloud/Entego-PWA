@@ -1,4 +1,4 @@
-const ARF_VERSION='73';
+const ARF_VERSION='74';
 const arfRoute=()=>{try{return localStorage.getItem('entego_route')||'home'}catch{return 'home'}};
 const arfUser=()=>{try{return JSON.parse(localStorage.getItem('entego_auth_user')||'null')}catch{return null}};
 function arfNotice(title,message,detail=''){
