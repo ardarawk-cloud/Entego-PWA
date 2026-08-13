@@ -62,8 +62,10 @@ jobs:
 
             const slow=await browser.newContext(device);const slowPage=await slow.newPage();
             await slowPage.route('**/assets/index.js',async route=>{await new Promise(r=>setTimeout(r,6000));await route.continue()});
-            const start=Date.now();await slowPage.goto(process.env.BASE_URL+'/?slow-entry=75',{waitUntil:'domcontentloaded',timeout:12000});
-            await slowPage.waitForTimeout(500);let state=await snapshot(slowPage);console.log(`[slow-js 500ms] ${Date.now()-start}ms ${JSON.stringify(state)}`);
+            const start=Date.now();
+            await slowPage.goto(process.env.BASE_URL+'/?slow-entry=75',{waitUntil:'commit',timeout:12000});
+            await slowPage.waitForSelector('#entegoStaticShell',{state:'attached',timeout:1500});
+            let state=await snapshot(slowPage);console.log(`[slow-js shell] ${Date.now()-start}ms ${JSON.stringify(state)}`);
             if(!state.staticShell||state.shield||!state.text.includes('Entertainment & Rental Marketplace'))process.exit(4);
             console.log('STATIC_SHELL_BEFORE_JS=PASS');
             await slow.close();
