@@ -51,9 +51,6 @@ export async function handleAuthApi(request,env){
   if(sessionMatch&&request.method==='DELETE'){
    const user=await getRequestUser(request,env);if(!user)return json({ok:false,error:'unauthenticated'},401);const id=decodeURIComponent(sessionMatch[1]),sessions=await store.listSessions(user.id,token),current=sessions.find(x=>x.id===id)?.current;await store.revokeSession(user.id,id);return json({ok:true,currentRevoked:Boolean(current)},200,current?{'set-cookie':clearCookie()}:{});
   }
-  if(url.pathname==='/api/auth/__probe-cleanup'&&request.method==='POST'){
-   return json({ok:true,...await store.cleanupDiagnosticUsers()});
-  }
   if(url.pathname==='/api/auth/admin/bootstrap'&&request.method==='POST'){
    const blocked=await enforce(store,[['admin-bootstrap-ip',ip,8,900]]);if(blocked)return blocked;
    if(!env.ADMIN_BOOTSTRAP_KEY)return json({ok:false,error:'admin_bootstrap_not_configured'},503);
