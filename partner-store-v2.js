@@ -150,16 +150,5 @@ export class EntegoPartner extends BasePartner{
   return {eligible:true,reason:'identity_approved',identity};
  }
 
- async listDirectory(filters={}){
-  const rows=await super.listDirectory(filters),verified=[];
-  for(const profile of rows){const identity=await this.getIdentity(profile.userId);if(identity?.identityStatus==='approved')verified.push(profile)}
-  return verified;
- }
-
- async publicBundle(userId){
-  const identity=await this.getIdentity(userId);if(identity?.identityStatus!=='approved')return null;
-  return super.publicBundle(userId);
- }
-
  async setOperationalStatus(userId,status){const uid=clean(userId,100),next=clean(status,20);if(!['active','restricted'].includes(next))throw new Error('INVALID_PARTNER_STATUS');const profile=await this.getProfile(uid);if(!profile)return null;this.sql.exec(`UPDATE profiles SET status=?,updated_at=? WHERE user_id=?`,next,new Date().toISOString(),uid);return this.getProfile(uid)}
 }
