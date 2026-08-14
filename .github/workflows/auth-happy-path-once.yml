@@ -18,9 +18,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sleep 12
+          sleep 8
           email="entego-happy-${GITHUB_RUN_ID}@example.invalid"
-          echo "Testing registration for $email"
+          echo "Testing registration for $email after backend convergence"
           code="$(curl -sS -D /tmp/register-headers.txt -c /tmp/entego-cookies.txt -o /tmp/register.json -w '%{http_code}' --connect-timeout 8 --max-time 30 \
             -H 'content-type: application/json' -H 'accept: application/json' \
             --data "{\"displayName\":\"ENTEGO Happy Probe\",\"email\":\"$email\",\"password\":\"ProbePass123!\",\"role\":\"customer\"}" \
