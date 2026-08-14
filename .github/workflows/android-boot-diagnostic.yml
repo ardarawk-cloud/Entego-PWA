@@ -33,10 +33,10 @@ jobs:
           elif command -v chromium >/dev/null 2>&1; then echo "CHROME=$(command -v chromium)" >> "$GITHUB_ENV"; \
           else echo 'No system Chrome found'; exit 1; fi
 
-      - name: Probe Android v76 static shell account routes and registration feedback
+      - name: Probe Android v77 static shell account routes and identity module
         shell: bash
         run: |
-          timeout 90s node <<'NODE'
+          timeout 100s node <<'NODE'
           const { chromium } = require('playwright-core');
           (async()=>{
             const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
@@ -58,12 +58,12 @@ jobs:
             }
             let x=await open('first');if(x.state.shield||x.state.mainCount<1)process.exit(2);await x.page.close();
             await new Promise(r=>setTimeout(r,400));
-            x=await open('second');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v76'))process.exit(3);await x.page.close();
+            x=await open('second');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v77'))process.exit(3);await x.page.close();
 
             const slow=await browser.newContext(device);const slowPage=await slow.newPage();
             await slowPage.route('**/assets/index.js',async route=>{await new Promise(r=>setTimeout(r,6000));await route.continue()});
             const start=Date.now();
-            await slowPage.goto(process.env.BASE_URL+'/?slow-entry=76',{waitUntil:'commit',timeout:12000});
+            await slowPage.goto(process.env.BASE_URL+'/?slow-entry=77',{waitUntil:'commit',timeout:12000});
             await slowPage.waitForSelector('#entegoStaticShell',{state:'attached',timeout:1500});
             let state=await snapshot(slowPage);console.log(`[slow-js shell] ${Date.now()-start}ms ${JSON.stringify(state)}`);
             if(!state.staticShell||state.shield||!state.text.includes('Entertainment & Rental Marketplace'))process.exit(4);
@@ -76,17 +76,23 @@ jobs:
             await page.reload({waitUntil:'domcontentloaded',timeout:12000});await page.waitForTimeout(1800);
             state=await snapshot(page);if(state.shield||state.mainCount<1)process.exit(5);
 
-            const registerTab=page.locator('#authRegisterTab');if(await registerTab.count()!==1)process.exit(6);await registerTab.click();
-            const registerBtn=page.locator('#authRegisterBtn');if(await registerBtn.count()!==1)process.exit(7);await registerBtn.click();await page.waitForTimeout(150);
+            const identityModule=await page.evaluate(async()=>{const r=await fetch('/identity-center-flow.js?v=77',{cache:'no-store'});return {status:r.status,text:await r.text()}});
+            if(identityModule.status!==200||!identityModule.text.includes("IDENTITY_UI_VERSION='77'")||!identityModule.text.includes('Payout terkunci'))process.exit(6);
+            const identityConfig=await page.evaluate(async()=>{const r=await fetch('/api/identity/config',{cache:'no-store'});return {status:r.status,data:await r.json().catch(()=>({}))}});
+            if(identityConfig.status!==200||identityConfig.data?.documentsPublic!==false||identityConfig.data?.payoutGate!=='identity-approved-required')process.exit(7);
+            console.log('ANDROID_IDENTITY_POLICY=PASS');
+
+            const registerTab=page.locator('#authRegisterTab');if(await registerTab.count()!==1)process.exit(8);await registerTab.click();
+            const registerBtn=page.locator('#authRegisterBtn');if(await registerBtn.count()!==1)process.exit(9);await registerBtn.click();await page.waitForTimeout(150);
             const registerStatus=page.locator('#authRegisterStatus');
-            if(await registerStatus.count()!==1||!(await registerStatus.isVisible())||!(await registerStatus.innerText()).includes('Nama wajib diisi'))process.exit(8);
+            if(await registerStatus.count()!==1||!(await registerStatus.isVisible())||!(await registerStatus.innerText()).includes('Nama wajib diisi'))process.exit(10);
             console.log('REGISTER_VALIDATION_VISIBLE=PASS');
 
-            const payment=page.locator('.card').filter({hasText:'Metode pembayaran'}).first();if(await payment.count()!==1)process.exit(9);await payment.click();await page.waitForTimeout(150);
-            let notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Metode Pembayaran'))process.exit(10);
+            const payment=page.locator('.card').filter({hasText:'Metode pembayaran'}).first();if(await payment.count()!==1)process.exit(11);await payment.click();await page.waitForTimeout(150);
+            let notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Metode Pembayaran'))process.exit(12);
             await page.locator('#arfClose').click();
-            const admin=page.locator('.card').filter({hasText:'Admin Control Center'}).first();if(await admin.count()!==1)process.exit(11);await admin.click();await page.waitForTimeout(150);
-            notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Akses Admin'))process.exit(12);
+            const admin=page.locator('.card').filter({hasText:'Admin Control Center'}).first();if(await admin.count()!==1)process.exit(13);await admin.click();await page.waitForTimeout(150);
+            notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Akses Admin'))process.exit(14);
             console.log('ACCOUNT_MENU_TEST=PASS');
             await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
