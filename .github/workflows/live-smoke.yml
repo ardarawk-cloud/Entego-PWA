@@ -14,22 +14,23 @@ jobs:
     timeout-minutes: 6
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
-      EXPECTED_CACHE: entego-v75
-      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='75'
+      EXPECTED_CACHE: entego-v76
+      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='76'
     steps:
-      - name: Wait for complete v75 production state
+      - name: Wait for complete v76 production state
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 18); do
             index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/" 2>/dev/null || true)"
             sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js" 2>/dev/null || true)"
-            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=75" 2>/dev/null || true)"
-            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=75" 2>/dev/null || true)"
+            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=76" 2>/dev/null || true)"
+            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=76" 2>/dev/null || true)"
+            auth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/auth-flow.js?v=76" 2>/dev/null || true)"
             entry="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/assets/index.js" 2>/dev/null || true)"
             css="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/assets/index.css" 2>/dev/null || true)"
             if grep -q "$EXPECTED_BOOT" <<<"$index" \
-              && grep -q "ENTEGO_ASSET_STRATEGY='static-shell-stable-v75'" <<<"$index" \
+              && grep -q "ENTEGO_ASSET_STRATEGY='static-shell-stable-v76'" <<<"$index" \
               && grep -q 'id="entegoStaticShell"' <<<"$index" \
               && grep -q 'Koneksi lambat' <<<"$index" \
               && ! grep -q 'id="entegoBootShield"' <<<"$index" \
@@ -42,20 +43,37 @@ jobs:
               && grep -q 'event.waitUntil(refresh)' <<<"$sw" \
               && ! grep -q 'networkFirstNavigation' <<<"$sw" \
               && grep -q 'entego-directory-v68' <<<"$sw" \
-              && grep -q 'account-route-fix-flow.js?v=75' <<<"$sw" \
-              && grep -q 'route-loader-flow.js?v=75' <<<"$sw" \
-              && grep -q "ARF_VERSION='75'" <<<"$account" \
-              && grep -q "RL_VERSION='75'" <<<"$loader" \
+              && grep -q 'account-route-fix-flow.js?v=76' <<<"$sw" \
+              && grep -q 'route-loader-flow.js?v=76' <<<"$sw" \
+              && grep -q "ARF_VERSION='76'" <<<"$account" \
+              && grep -q "RL_VERSION='76'" <<<"$loader" \
+              && grep -q "AUTH_UI_VERSION='76'" <<<"$auth" \
+              && grep -q 'authRegisterStatus' <<<"$auth" \
+              && grep -q 'Membuat akun' <<<"$auth" \
               && test -n "$entry" \
               && test -n "$css"; then
-              echo "Production exposes ENTEGO v75 static-shell architecture"
+              echo "Production exposes ENTEGO v76 registration UX"
               exit 0
             fi
-            echo "Attempt $attempt/18: production v75 assets are still converging"
+            echo "Attempt $attempt/18: production v76 assets are still converging"
             sleep 5
           done
-          echo "Production did not converge to complete ENTEGO v75 within the probe window"
+          echo "Production did not converge to complete ENTEGO v76 within the probe window"
           exit 1
+
+      - name: Verify registration route reaches auth Durable Object
+        shell: bash
+        run: |
+          set -euo pipefail
+          email="registration-probe-${GITHUB_RUN_ID}@example.invalid"
+          code="$(curl -sS -o /tmp/register-probe.json -w '%{http_code}' --connect-timeout 8 --max-time 20 \
+            -H 'content-type: application/json' -H 'accept: application/json' \
+            --data "{\"displayName\":\"ENTEGO Probe\",\"email\":\"$email\",\"password\":\"ProbePass123!\",\"role\":\"probe-invalid\"}" \
+            "$BASE_URL/api/auth/register")"
+          cat /tmp/register-probe.json
+          test "$code" = "400"
+          grep -q '"error":"INVALID_ROLE"' /tmp/register-probe.json
+          echo "Registration request reached production auth validation without creating a user"
 
       - name: Wait for directory timing instrumentation
         shell: bash
