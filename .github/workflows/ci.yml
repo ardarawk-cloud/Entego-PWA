@@ -103,7 +103,7 @@ jobs:
           grep -q 'payout_enabled' partner-store-v2.js
           grep -q 'FULL_ID_NUMBER_NOT_ACCEPTED' partner-store-v2.js
           grep -q 'FULL_BANK_NUMBER_NOT_ACCEPTED' partner-store-v2.js
-          grep -q 'identity_status.*approved' partner-store-v2.js
+          grep -q "identityStatus!=='approved'" partner-store-v2.js
           grep -q 'ENT_IDENTITY_MEDIA' identity-api.js
           grep -q 'documentsPublic:false' identity-api.js
           grep -q 'fullNikStored:false' identity-api.js
