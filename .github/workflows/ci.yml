@@ -55,18 +55,18 @@ jobs:
           ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.css' dist/index.html
           grep -q '"main":"./api-worker-v63.js"' wrangler.jsonc
           grep -q '"ENT_SUPPORT","class_name":"EntegoSupport"' wrangler.jsonc
-          grep -q "RL_VERSION='75'" route-loader-flow.js
+          grep -q "RL_VERSION='76'" route-loader-flow.js
           grep -q '@vite-ignore' route-loader-flow.js
           grep -q 'rlIdle' route-loader-flow.js
           grep -q "route!=='home'" route-loader-flow.js
           grep -q 'sanitizeHome' production-truth-gate-flow.js
           grep -q 'ptgScheduled' production-truth-gate-flow.js
-          grep -q "account-route-fix-flow.js?v=75" index.html
-          grep -q "route-loader-flow.js?v=75" index.html
-          grep -q "production-truth-gate-flow.js?v=75" index.html
-          grep -q "production-guard-flow.js?v=75" index.html
-          grep -q "ENTEGO_BOOT_VERSION='75'" index.html
-          grep -q "ENTEGO_ASSET_STRATEGY='static-shell-stable-v75'" index.html
+          grep -q "account-route-fix-flow.js?v=76" index.html
+          grep -q "route-loader-flow.js?v=76" index.html
+          grep -q "production-truth-gate-flow.js?v=76" index.html
+          grep -q "production-guard-flow.js?v=76" index.html
+          grep -q "ENTEGO_BOOT_VERSION='76'" index.html
+          grep -q "ENTEGO_ASSET_STRATEGY='static-shell-stable-v76'" index.html
           grep -q 'id="entegoStaticShell"' index.html
           grep -q 'Data Talent, booking, pembayaran, dan akun dimuat aman dari server' index.html
           grep -q 'Koneksi lambat' index.html
@@ -76,13 +76,19 @@ jobs:
           grep -q 'visibilitychange' index.html
           ! grep -q 'location.reload()' index.html
           test "$(grep -o '<script type=\"module\" src=' index.html | wc -l)" -eq 5
-          grep -q "ARF_VERSION='75'" account-route-fix-flow.js
+          grep -q "ARF_VERSION='76'" account-route-fix-flow.js
           grep -q 'Metode Pembayaran' account-route-fix-flow.js
           grep -q 'Admin Control Center' account-route-fix-flow.js
           grep -q 'ADMIN REQUIRED' account-route-fix-flow.js
+          grep -q "AUTH_UI_VERSION='76'" auth-flow.js
+          grep -q 'authRegisterStatus' auth-flow.js
+          grep -q 'Membuat akun' auth-flow.js
+          grep -q 'request_timeout' auth-flow.js
+          grep -q 'network_error' auth-flow.js
+          grep -q 'scrollIntoView' auth-flow.js
           ! grep -q "import './server-chat-flow.js'" production-guard-flow.js
           ! grep -q "import './admin-verification-flow.js'" production-guard-flow.js
-          grep -q 'const CACHE="entego-v75"' sw.js
+          grep -q 'const CACHE="entego-v76"' sw.js
           grep -q 'const DIRECTORY_CACHE="entego-directory-v68"' sw.js
           grep -q 'const DIRECTORY_TTL_MS=120000' sw.js
           grep -q '"/assets/index.js"' sw.js
@@ -94,13 +100,13 @@ jobs:
           ! grep -q 'client.navigate' sw.js
           grep -q 'url.pathname==="/api/directory"' sw.js
           grep -q 'directoryResponse' sw.js
-          grep -q 'account-route-fix-flow.js?v=75' sw.js
-          grep -q 'production-truth-gate-flow.js?v=75' sw.js
-          grep -q 'route-loader-flow.js?v=75' sw.js
+          grep -q 'account-route-fix-flow.js?v=76' sw.js
+          grep -q 'production-truth-gate-flow.js?v=76' sw.js
+          grep -q 'route-loader-flow.js?v=76' sw.js
           grep -q 'cacheFirst' sw.js
           grep -q 'request.mode==="navigate"' sw.js
-          ! grep -q 'payment-flow.js?v=75' sw.js
-          ! grep -q 'admin-payment-flow.js?v=75' sw.js
+          ! grep -q 'payment-flow.js?v=76' sw.js
+          ! grep -q 'admin-payment-flow.js?v=76' sw.js
           ! grep -q 'portfolio-media-flow.js' sw.js
           grep -q 'authRefreshPromise' auth-flow.js
           grep -q 'requestIdleCallback' auth-flow.js
