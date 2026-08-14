@@ -1,0 +1,51 @@
+name: ENTEGO AUTH HAPPY PATH ONCE
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  auth-happy-path:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      BASE_URL: https://entego-pwa.ardarawk.workers.dev
+    steps:
+      - name: Full registration session round-trip
+        shell: bash
+        run: |
+          set -euo pipefail
+          sleep 12
+          email="entego-happy-${GITHUB_RUN_ID}@example.invalid"
+          echo "Testing registration for $email"
+          code="$(curl -sS -D /tmp/register-headers.txt -c /tmp/entego-cookies.txt -o /tmp/register.json -w '%{http_code}' --connect-timeout 8 --max-time 30 \
+            -H 'content-type: application/json' -H 'accept: application/json' \
+            --data "{\"displayName\":\"ENTEGO Happy Probe\",\"email\":\"$email\",\"password\":\"ProbePass123!\",\"role\":\"customer\"}" \
+            "$BASE_URL/api/auth/register")"
+          echo "REGISTER_HTTP=$code"
+          cat /tmp/register.json || true
+          echo
+          cat /tmp/register-headers.txt | grep -iE '^(HTTP/|set-cookie:|content-type:|cf-ray:)' || true
+          test "$code" = "201"
+          grep -q '"ok":true' /tmp/register.json
+          grep -q '"role":"customer"' /tmp/register.json
+          grep -q 'entego_session' /tmp/entego-cookies.txt
+
+          me_code="$(curl -sS -b /tmp/entego-cookies.txt -o /tmp/me.json -w '%{http_code}' --connect-timeout 8 --max-time 20 "$BASE_URL/api/auth/me")"
+          echo "ME_HTTP=$me_code"
+          cat /tmp/me.json
+          echo
+          test "$me_code" = "200"
+          grep -q '"ok":true' /tmp/me.json
+          grep -q "$email" /tmp/me.json
+
+          logout_code="$(curl -sS -b /tmp/entego-cookies.txt -o /tmp/logout.json -w '%{http_code}' --connect-timeout 8 --max-time 20 -X POST "$BASE_URL/api/auth/logout")"
+          echo "LOGOUT_HTTP=$logout_code"
+          cat /tmp/logout.json
+          echo
+          test "$logout_code" = "200"
+          grep -q '"ok":true' /tmp/logout.json
+          echo "AUTH_HAPPY_PATH=PASS"
