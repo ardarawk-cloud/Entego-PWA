@@ -174,16 +174,6 @@ export class EntegoAuth extends DurableObject {
     return this.getUser(uid);
   }
 
-  async cleanupDiagnosticUsers() {
-    const rows=this.sql.exec(`SELECT id,email FROM users WHERE email LIKE 'entego-%@example.invalid' AND display_name IN ('ENTEGO Happy Probe','ENTEGO Android Probe')`).toArray();
-    for(const row of rows){
-      this.sql.exec(`DELETE FROM sessions WHERE user_id=?`,row.id);
-      this.sql.exec(`DELETE FROM booking_access WHERE user_id=?`,row.id);
-      this.sql.exec(`DELETE FROM users WHERE id=?`,row.id);
-    }
-    return {deleted:rows.length,emails:rows.map(row=>row.email)};
-  }
-
   async promoteAdmin(email) {
     const safeEmail = clean(email, 160).toLowerCase();
     const row = this.sql.exec(`SELECT id FROM users WHERE email = ? LIMIT 1`, safeEmail).toArray()[0];
