@@ -1,5 +1,6 @@
 import core from './api-worker-v62.js';
 import {getRequestUser} from './auth-api.js';
+import {handleIdentityApi,identityStorageConfigured} from './identity-api.js';
 import {EntegoSupport} from './support-store.js';
 export {EntegoStore,EntegoAuth,EntegoPayment,EntegoPartner,EntegoChat,EntegoOps,EntegoPresence,EntegoAlerts} from './api-worker-v62.js';
 export {EntegoSupport} from './support-store.js';
@@ -8,6 +9,7 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 const authStore=env=>env.ENT_AUTH.getByName('entego-auth-production');
 const bookingStore=env=>env.ENT_STORE.getByName('entego-production');
 const paymentStore=env=>env.ENT_PAY.getByName('entego-payment-production');
+const partnerStore=env=>env.ENT_PARTNER.getByName('entego-partners-production');
 const opsStore=env=>env.ENT_OPS.getByName('entego-ops-production');
 const alertStore=env=>env.ENT_ALERTS.getByName('entego-alerts-production');
 const supportStore=env=>env.ENT_SUPPORT.getByName('entego-support-production');
@@ -89,13 +91,24 @@ async function augmentActionCenter(request,env){
   let data={};
   try{data=await response.json()}catch{return response}
   const support=user.role==='admin'?(await supportStore(env).list('all',100)).filter(x=>x.status!=='resolved'):(await supportStore(env).listUser(user.id,20)).filter(x=>x.status==='in_review'||x.status==='resolved');
-  if(!support.length)return json(data);
   const readMap=new Map((await alertStore(env).listRead(user.id,500)).map(x=>[x.key,x.readAt]));
   const extra=support.map(row=>{
     const key=user.role==='admin'?`admin-support:${row.id}:${row.status}:${row.updated_at}`:`support-update:${row.id}:${row.status}:${row.updated_at}`;
     return {key,type:'support',severity:row.category==='safety'||row.category==='fraud'?'high':'medium',title:user.role==='admin'?`Support case ${row.status==='open'?'baru':'ditinjau'}`:`Case ${row.status==='resolved'?'selesai':'sedang ditinjau'}`,body:`${row.id} • ${row.subject}`,route:user.role==='admin'?'adminBookings':'help',read:readMap.has(key),readAt:readMap.get(key)||null};
   });
-  const items=[...extra,...(data.items||[])],order={high:0,medium:1,info:2};
+  let baseItems=[...(data.items||[])];
+  if(user.role==='partner'){
+    const identity=await partnerStore(env).getIdentity(user.id).catch(()=>null),status=identity?.identityStatus||'not_started';
+    if(status!=='approved'){
+      baseItems=baseItems.filter(x=>!String(x.key||'').startsWith('partner-verification-self:'));
+      const title=status==='submitted'?'Verifikasi identitas sedang ditinjau':status==='rejected'?'Verifikasi identitas perlu diperbaiki':'Lengkapi verifikasi identitas';
+      const body=status==='submitted'?'KTP, selfie, dan data rekening menunggu review Admin. Payout tetap terkunci.':status==='rejected'?(identity?.reviewNote||'Periksa catatan Admin lalu ajukan ulang.'):'Verifikasi identitas diperlukan sebelum Mitra dapat aktif penuh dan memenuhi syarat payout.';
+      const key=`partner-identity:${user.id}:${status}:${identity?.updatedAt||'none'}`;
+      extra.unshift({key,type:'verification',severity:status==='rejected'?'high':'medium',title,body,route:'profile',read:readMap.has(key),readAt:readMap.get(key)||null});
+    }
+  }
+  if(!extra.length)return json(data);
+  const items=[...extra,...baseItems],order={high:0,medium:1,info:2};
   items.sort((a,b)=>(order[a.severity]??9)-(order[b.severity]??9));
   return json({...data,items:items.slice(0,120),unreadCount:items.filter(x=>!x.read).length});
 }
@@ -110,10 +123,11 @@ export default {
   async fetch(request,env){
     const url=new URL(request.url),path=url.pathname;
     if(path==='/api/client-recovery'&&request.method==='GET')return clientRecovery(request);
+    const identityResponse=await handleIdentityApi(request,env);if(identityResponse)return identityResponse;
     if(path==='/api/health'&&request.method==='GET'){
       const response=await core.fetch(request,env);let data={};
       try{data=await response.json()}catch{}
-      return json({...data,supportCenter:'server-case-management',accountClosureRequest:'obligation-guarded',clientRecovery:'v75-sw-escape',version:'v63'});
+      return json({...data,supportCenter:'server-case-management',accountClosureRequest:'obligation-guarded',clientRecovery:'v75-sw-escape',partnerIdentity:'kyc-gated-private-docs',identityPrivateStorage:identityStorageConfigured(env)?'configured':'not-configured',payoutEligibility:'identity-approved-required',version:'v63'});
     }
     if(path==='/api/action-center'&&request.method==='GET')return augmentActionCenter(request,env);
     if(path==='/api/support/cases'&&request.method==='GET')return userCases(request,env);
