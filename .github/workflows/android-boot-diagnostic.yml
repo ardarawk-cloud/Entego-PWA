@@ -33,7 +33,7 @@ jobs:
           elif command -v chromium >/dev/null 2>&1; then echo "CHROME=$(command -v chromium)" >> "$GITHUB_ENV"; \
           else echo 'No system Chrome found'; exit 1; fi
 
-      - name: Probe Android v75 static shell and account routes
+      - name: Probe Android v76 static shell account routes and registration feedback
         shell: bash
         run: |
           timeout 90s node <<'NODE'
@@ -58,12 +58,12 @@ jobs:
             }
             let x=await open('first');if(x.state.shield||x.state.mainCount<1)process.exit(2);await x.page.close();
             await new Promise(r=>setTimeout(r,400));
-            x=await open('second');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v75'))process.exit(3);await x.page.close();
+            x=await open('second');if(x.state.shield||x.state.mainCount<1||!x.state.caches.includes('entego-v76'))process.exit(3);await x.page.close();
 
             const slow=await browser.newContext(device);const slowPage=await slow.newPage();
             await slowPage.route('**/assets/index.js',async route=>{await new Promise(r=>setTimeout(r,6000));await route.continue()});
             const start=Date.now();
-            await slowPage.goto(process.env.BASE_URL+'/?slow-entry=75',{waitUntil:'commit',timeout:12000});
+            await slowPage.goto(process.env.BASE_URL+'/?slow-entry=76',{waitUntil:'commit',timeout:12000});
             await slowPage.waitForSelector('#entegoStaticShell',{state:'attached',timeout:1500});
             let state=await snapshot(slowPage);console.log(`[slow-js shell] ${Date.now()-start}ms ${JSON.stringify(state)}`);
             if(!state.staticShell||state.shield||!state.text.includes('Entertainment & Rental Marketplace'))process.exit(4);
@@ -75,11 +75,18 @@ jobs:
             await page.evaluate(()=>localStorage.setItem('entego_route','profile'));
             await page.reload({waitUntil:'domcontentloaded',timeout:12000});await page.waitForTimeout(1800);
             state=await snapshot(page);if(state.shield||state.mainCount<1)process.exit(5);
-            const payment=page.locator('.card').filter({hasText:'Metode pembayaran'}).first();if(await payment.count()!==1)process.exit(6);await payment.click();await page.waitForTimeout(150);
-            let notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Metode Pembayaran'))process.exit(7);
+
+            const registerTab=page.locator('#authRegisterTab');if(await registerTab.count()!==1)process.exit(6);await registerTab.click();
+            const registerBtn=page.locator('#authRegisterBtn');if(await registerBtn.count()!==1)process.exit(7);await registerBtn.click();await page.waitForTimeout(150);
+            const registerStatus=page.locator('#authRegisterStatus');
+            if(await registerStatus.count()!==1||!(await registerStatus.isVisible())||!(await registerStatus.innerText()).includes('Nama wajib diisi'))process.exit(8);
+            console.log('REGISTER_VALIDATION_VISIBLE=PASS');
+
+            const payment=page.locator('.card').filter({hasText:'Metode pembayaran'}).first();if(await payment.count()!==1)process.exit(9);await payment.click();await page.waitForTimeout(150);
+            let notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Metode Pembayaran'))process.exit(10);
             await page.locator('#arfClose').click();
-            const admin=page.locator('.card').filter({hasText:'Admin Control Center'}).first();if(await admin.count()!==1)process.exit(8);await admin.click();await page.waitForTimeout(150);
-            notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Akses Admin'))process.exit(9);
+            const admin=page.locator('.card').filter({hasText:'Admin Control Center'}).first();if(await admin.count()!==1)process.exit(11);await admin.click();await page.waitForTimeout(150);
+            notice=page.locator('#entegoAccountRouteNotice');if(await notice.count()!==1||!(await notice.innerText()).includes('Akses Admin'))process.exit(12);
             console.log('ACCOUNT_MENU_TEST=PASS');
             await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
