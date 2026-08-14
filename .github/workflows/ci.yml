@@ -86,6 +86,8 @@ jobs:
           grep -q 'request_timeout' auth-flow.js
           grep -q 'network_error' auth-flow.js
           grep -q 'scrollIntoView' auth-flow.js
+          grep -q 'const PBKDF2_ITERATIONS=100000' auth-store-v2.js
+          ! grep -q 'iterations:210000' auth-store-v2.js
           ! grep -q "import './server-chat-flow.js'" production-guard-flow.js
           ! grep -q "import './admin-verification-flow.js'" production-guard-flow.js
           grep -q 'const CACHE="entego-v76"' sw.js
