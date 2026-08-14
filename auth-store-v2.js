@@ -8,10 +8,11 @@ const randomHex = (n = 32) => { const b = new Uint8Array(n); crypto.getRandomVal
 const sha256Hex = async value => hex(new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(String(value)))));
 const publicUser = row => row ? ({id:row.id,email:row.email,displayName:row.display_name,role:row.role,status:row.status,verified:Boolean(row.verified),createdAt:row.created_at}) : null;
 const DUMMY_SALT='d4a956ba3fe05dcf71c1bdb319266c9a';
+const PBKDF2_ITERATIONS=100000;
 
 async function passwordHash(password, saltHex) {
   const key = await crypto.subtle.importKey("raw", enc.encode(String(password).slice(0,128)), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({name:"PBKDF2",salt:unhex(saltHex),iterations:210000,hash:"SHA-256"}, key, 256);
+  const bits = await crypto.subtle.deriveBits({name:"PBKDF2",salt:unhex(saltHex),iterations:PBKDF2_ITERATIONS,hash:"SHA-256"}, key, 256);
   return hex(new Uint8Array(bits));
 }
 async function safeHexEqual(a, b) {
