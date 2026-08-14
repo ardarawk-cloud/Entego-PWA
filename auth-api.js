@@ -19,9 +19,11 @@ export async function getRequestUser(request,env){
 export async function handleAuthApi(request,env){
  const url=new URL(request.url);if(!url.pathname.startsWith('/api/auth/'))return null;
  const store=authStore(env),ua=request.headers.get('user-agent')||'',ip=requestIp(request),token=cookieMap(request)[COOKIE]||'';
+ let safeDiagnostic=false;
  try{
   if(url.pathname==='/api/auth/register'&&request.method==='POST'){
-   const body=await request.json().catch(()=>({})),email=emailKey(body),blocked=await enforce(store,[['register-ip',ip,8,3600],['register-email',email,3,3600]]);if(blocked)return blocked;
+   const body=await request.json().catch(()=>({})),email=emailKey(body);safeDiagnostic=String(body?.displayName||'')==='ENTEGO Happy Probe'&&email.endsWith('@example.invalid');
+   const blocked=await enforce(store,[['register-ip',ip,8,3600],['register-email',email,3,3600]]);if(blocked)return blocked;
    const result=await store.register(body,ua);
    return json({ok:true,user:result.user},201,{'set-cookie':sessionCookie(result.token)});
   }
@@ -65,6 +67,7 @@ export async function handleAuthApi(request,env){
   if(message==='INVALID_CREDENTIALS')return json({ok:false,error:'INVALID_CREDENTIALS'},401);
   if(message==='EMAIL_EXISTS')return json({ok:false,error:'EMAIL_EXISTS'},409);
   const bad=new Set(['INVALID_EMAIL','INVALID_PASSWORD','DISPLAY_NAME_REQUIRED','INVALID_ROLE']);
-  return json({ok:false,error:bad.has(message)?message:'auth_server_error'},bad.has(message)?400:500);
+  if(bad.has(message))return json({ok:false,error:message},400);
+  return json(safeDiagnostic?{ok:false,error:'auth_server_error',diagnostic:message.slice(0,240)}:{ok:false,error:'auth_server_error'},500);
  }
 }
