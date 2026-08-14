@@ -14,23 +14,24 @@ jobs:
     timeout-minutes: 6
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
-      EXPECTED_CACHE: entego-v76
-      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='76'
+      EXPECTED_CACHE: entego-v77
+      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='77'
     steps:
-      - name: Wait for complete v76 production state
+      - name: Wait for complete v77 production state
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 18); do
             index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/" 2>/dev/null || true)"
             sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js" 2>/dev/null || true)"
-            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=76" 2>/dev/null || true)"
-            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=76" 2>/dev/null || true)"
-            auth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/auth-flow.js?v=76" 2>/dev/null || true)"
+            account="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-route-fix-flow.js?v=77" 2>/dev/null || true)"
+            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=77" 2>/dev/null || true)"
+            auth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/auth-flow.js?v=77" 2>/dev/null || true)"
+            identity="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/identity-center-flow.js?v=77" 2>/dev/null || true)"
             entry="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/assets/index.js" 2>/dev/null || true)"
             css="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/assets/index.css" 2>/dev/null || true)"
             if grep -q "$EXPECTED_BOOT" <<<"$index" \
-              && grep -q "ENTEGO_ASSET_STRATEGY='static-shell-stable-v76'" <<<"$index" \
+              && grep -q "ENTEGO_ASSET_STRATEGY='static-shell-stable-v77'" <<<"$index" \
               && grep -q 'id="entegoStaticShell"' <<<"$index" \
               && grep -q 'Koneksi lambat' <<<"$index" \
               && ! grep -q 'id="entegoBootShield"' <<<"$index" \
@@ -43,22 +44,24 @@ jobs:
               && grep -q 'event.waitUntil(refresh)' <<<"$sw" \
               && ! grep -q 'networkFirstNavigation' <<<"$sw" \
               && grep -q 'entego-directory-v68' <<<"$sw" \
-              && grep -q 'account-route-fix-flow.js?v=76' <<<"$sw" \
-              && grep -q 'route-loader-flow.js?v=76' <<<"$sw" \
-              && grep -q "ARF_VERSION='76'" <<<"$account" \
-              && grep -q "RL_VERSION='76'" <<<"$loader" \
-              && grep -q "AUTH_UI_VERSION='76'" <<<"$auth" \
-              && grep -q 'authRegisterStatus' <<<"$auth" \
-              && grep -q 'Membuat akun' <<<"$auth" \
+              && grep -q 'account-route-fix-flow.js?v=77' <<<"$sw" \
+              && grep -q 'route-loader-flow.js?v=77' <<<"$sw" \
+              && grep -q "ARF_VERSION='77'" <<<"$account" \
+              && grep -q "RL_VERSION='77'" <<<"$loader" \
+              && grep -q 'identity-center-flow.js' <<<"$loader" \
+              && grep -q "AUTH_UI_VERSION='77'" <<<"$auth" \
+              && grep -q 'Verifikasi identitas diperlukan' <<<"$auth" \
+              && grep -q "IDENTITY_UI_VERSION='77'" <<<"$identity" \
+              && grep -q 'Payout terkunci' <<<"$identity" \
               && test -n "$entry" \
               && test -n "$css"; then
-              echo "Production exposes ENTEGO v76 registration UX"
+              echo "Production exposes ENTEGO v77 identity verification UX"
               exit 0
             fi
-            echo "Attempt $attempt/18: production v76 assets are still converging"
+            echo "Attempt $attempt/18: production v77 assets are still converging"
             sleep 5
           done
-          echo "Production did not converge to complete ENTEGO v76 within the probe window"
+          echo "Production did not converge to complete ENTEGO v77 within the probe window"
           exit 1
 
       - name: Verify registration route reaches auth Durable Object
@@ -74,6 +77,19 @@ jobs:
           test "$code" = "400"
           grep -q '"error":"INVALID_ROLE"' /tmp/register-probe.json
           echo "Registration request reached production auth validation without creating a user"
+
+      - name: Verify identity policy is fail-closed and private
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -o /tmp/identity-config.json -w '%{http_code}' --connect-timeout 8 --max-time 20 "$BASE_URL/api/identity/config")"
+          cat /tmp/identity-config.json
+          test "$code" = "200"
+          grep -q '"documentsPublic":false' /tmp/identity-config.json
+          grep -q '"fullNikStored":false' /tmp/identity-config.json
+          grep -q '"fullBankAccountStored":false' /tmp/identity-config.json
+          grep -q '"payoutGate":"identity-approved-required"' /tmp/identity-config.json
+          echo "Identity policy is private, minimized, and payout-gated"
 
       - name: Wait for directory timing instrumentation
         shell: bash
@@ -108,6 +124,7 @@ jobs:
           probe "css" "/assets/index.css"
           probe "sw" "/sw.js"
           probe "auth" "/api/auth/me"
+          probe "identity-config" "/api/identity/config"
           probe "directory" "/api/directory?limit=1"
 
       - name: Verify public directory response
