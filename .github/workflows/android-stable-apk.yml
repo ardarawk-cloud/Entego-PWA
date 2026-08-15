@@ -1,0 +1,194 @@
+name: ENTEGO ANDROID STABLE APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-stable-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      ENTEGO_VERSION_NAME: '1.0.4'
+      ENTEGO_KEYSTORE_B64: ${{ secrets.ENTEGO_ANDROID_KEYSTORE_B64 }}
+      ENTEGO_KEY_ALIAS: ${{ secrets.ENTEGO_ANDROID_KEY_ALIAS }}
+      ENTEGO_STORE_PASSWORD: ${{ secrets.ENTEGO_ANDROID_STORE_PASSWORD }}
+      ENTEGO_KEY_PASSWORD: ${{ secrets.ENTEGO_ANDROID_KEY_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve monotonic Android versionCode
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Dedicated workflow run numbers are monotonic. The 100000 offset
+          # guarantees this stable track is newer than historical debug builds.
+          echo "ENTEGO_VERSION_CODE=$((100000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build ENTEGO web bundle
+        run: npm run build
+
+      - name: Verify current ENTEGO bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          test -f dist/identity-center-flow.js
+          test -f dist/identity-submit-fix-flow.js
+          test -f dist/native-runtime-flow.js
+          test -f dist/native-identity-camera-flow.js
+          grep -Fq 'KTP — WNI' dist/identity-center-flow.js
+          grep -Fq 'Paspor — WNA / internasional' dist/identity-center-flow.js
+          grep -Fq 'KYC_SUBMIT_FIX_VERSION' dist/identity-submit-fix-flow.js
+          grep -Fq "IDENTITY_TYPES=['KTP','SIM','PASSPORT']" identity-api.js
+          grep -Fq "ID_TYPES=new Set(['KTP','SIM','PASSPORT'])" partner-store-v2.js
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('dist/index.html')
+          s=p.read_text()
+          marker='</head>'
+          bridge='  <script src="/native-runtime-flow.js?v=2"></script>\n  <script src="/native-identity-camera-flow.js?v=2"></script>\n'+marker
+          if marker not in s:
+              raise SystemExit('head marker missing from native bundle')
+          if 'native-runtime-flow.js?v=2' not in s:
+              s=s.replace(marker,bridge,1)
+          p.write_text(s)
+          PY
+          grep -q 'native-runtime-flow.js?v=2' dist/index.html
+          grep -q 'native-identity-camera-flow.js?v=2' dist/index.html
+          grep -q 'com.ardacore.entego' capacitor.config.json
+
+      - name: Generate Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android
+          npx cap add android
+          npx cap sync android
+          npm run android:assets
+          test -f android/gradlew
+          grep -q 'com.ardacore.entego' android/app/build.gradle
+          grep -q 'targetSdkVersion = 36' android/variables.gradle
+
+      - name: Set Android version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          import os,re
+          p=Path('android/app/build.gradle')
+          s=p.read_text()
+          s=re.sub(r'versionCode\s+\d+', f"versionCode {os.environ['ENTEGO_VERSION_CODE']}", s, count=1)
+          s=re.sub(r'versionName\s+["\'][^"\']+["\']', f"versionName \"{os.environ['ENTEGO_VERSION_NAME']}\"", s, count=1)
+          p.write_text(s)
+          PY
+          grep -q "versionCode ${ENTEGO_VERSION_CODE}" android/app/build.gradle
+          grep -q "versionName \"${ENTEGO_VERSION_NAME}\"" android/app/build.gradle
+
+      - name: Build release APK and AAB
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
+          cd ..
+          test -f android/app/build/outputs/apk/release/app-release-unsigned.apk
+          test -f android/app/build/outputs/bundle/release/app-release.aab
+          mkdir -p stable-out
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-unsigned.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-unsigned.aab
+
+      - name: Sign stable release with protected ENTEGO key
+        if: ${{ env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$ENTEGO_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/entego-upload.jks"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
+            --ks "$RUNNER_TEMP/entego-upload.jks" \
+            --ks-key-alias "$ENTEGO_KEY_ALIAS" \
+            --ks-pass "pass:$ENTEGO_STORE_PASSWORD" \
+            --key-pass "pass:$ENTEGO_KEY_PASSWORD" \
+            --out stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.apk \
+            stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.apk > stable-out/signing-certificate.txt
+          cp stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-unsigned.aab stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.aab
+          jarsigner -keystore "$RUNNER_TEMP/entego-upload.jks" -storepass "$ENTEGO_STORE_PASSWORD" -keypass "$ENTEGO_KEY_PASSWORD" stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.aab "$ENTEGO_KEY_ALIAS"
+          jarsigner -verify stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.aab >/dev/null
+          rm -f "$RUNNER_TEMP/entego-upload.jks"
+
+      - name: Record update metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          SIGNING='unsigned-needs-protected-key'
+          if [ -f stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.apk ]; then SIGNING='signed-stable'; fi
+          {
+            echo "ENTEGO Android Stable Track"
+            echo "versionName=${ENTEGO_VERSION_NAME}"
+            echo "versionCode=${ENTEGO_VERSION_CODE}"
+            echo "applicationId=com.ardacore.entego"
+            echo "signing=${SIGNING}"
+            echo "updatePolicy=same-package-same-signing-key-higher-versionCode"
+            echo "debugApkForUsers=false"
+            echo "commit=${GITHUB_SHA}"
+          } > stable-out/build-info.txt
+          sha256sum stable-out/* > stable-out/SHA256SUMS.txt
+
+      - name: Upload stable signed package
+        if: ${{ env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENTEGO-Android-v1.0.4-STABLE-UPDATEABLE
+          path: |
+            stable-out/ENTEGO-Android-v1.0.4-stable.apk
+            stable-out/ENTEGO-Android-v1.0.4-stable.aab
+            stable-out/signing-certificate.txt
+            stable-out/build-info.txt
+            stable-out/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload unsigned candidate for protected offline signing
+        if: ${{ !(env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENTEGO-Android-v1.0.4-UNSIGNED-DO-NOT-DISTRIBUTE
+          path: |
+            stable-out/ENTEGO-Android-v1.0.4-stable-unsigned.apk
+            stable-out/ENTEGO-Android-v1.0.4-stable-unsigned.aab
+            stable-out/build-info.txt
+            stable-out/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
