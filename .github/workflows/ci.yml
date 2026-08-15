@@ -40,6 +40,7 @@ jobs:
           test -f dist/route-loader-flow.js
           test -f dist/production-truth-gate-flow.js
           test -f dist/production-guard-flow.js
+          test -f dist/premium-ui-flow.js
           test -f dist/auth-flow.js
           test -f dist/action-center-flow.js
           test -f dist/server-partner-flow.js
@@ -99,19 +100,25 @@ jobs:
           grep -q 'network_error' auth-flow.js
           grep -q 'scrollIntoView' auth-flow.js
           grep -q "IDENTITY_UI_VERSION='77'" identity-center-flow.js
-          grep -q 'Jangan masukkan 16 digit NIK lengkap' identity-center-flow.js
+          grep -Fq "if(document.querySelector('#entegoIdentityCenter'))return;" identity-center-flow.js
+          grep -q 'Jangan masukkan nomor identitas lengkap' identity-center-flow.js
+          grep -q 'KTP — WNI' identity-center-flow.js
+          grep -q 'Paspor — WNA / internasional' identity-center-flow.js
           grep -q 'Payout terkunci' identity-center-flow.js
           grep -q 'identity_private_storage_not_configured' identity-center-flow.js
           grep -q "AV_VERSION='77'" admin-verification-flow.js
           grep -q '/api/admin/identity/partners' admin-verification-flow.js
+          grep -q 'KTP / SIM / Paspor' admin-verification-flow.js
           grep -q 'Tombol Verifikasi aktif hanya setelah Identity Center' admin-verification-flow.js
           grep -q 'identity_verifications' partner-store-v2.js
           grep -q 'identity_events' partner-store-v2.js
           grep -q 'payout_enabled' partner-store-v2.js
+          grep -Fq "ID_TYPES=new Set(['KTP','SIM','PASSPORT'])" partner-store-v2.js
           grep -q 'FULL_ID_NUMBER_NOT_ACCEPTED' partner-store-v2.js
           grep -q 'FULL_BANK_NUMBER_NOT_ACCEPTED' partner-store-v2.js
           grep -q "identityStatus!=='approved'" partner-store-v2.js
           grep -q 'ENT_IDENTITY_MEDIA' identity-api.js
+          grep -Fq "IDENTITY_TYPES=['KTP','SIM','PASSPORT']" identity-api.js
           grep -q 'documentsPublic:false' identity-api.js
           grep -q 'fullNikStored:false' identity-api.js
           grep -q 'fullBankAccountStored:false' identity-api.js
@@ -124,6 +131,9 @@ jobs:
           ! grep -q 'identity/' media-api.js
           grep -q 'const PBKDF2_ITERATIONS=100000' auth-store-v2.js
           ! grep -q 'iterations:210000' auth-store-v2.js
+          grep -Fq "import './premium-ui-flow.js'" production-guard-flow.js
+          grep -q 'entegoPremiumMonoStyle' premium-ui-flow.js
+          grep -q 'entego-brand-mark' premium-ui-flow.js
           ! grep -q "import './server-chat-flow.js'" production-guard-flow.js
           ! grep -q "import './admin-verification-flow.js'" production-guard-flow.js
           grep -q 'const CACHE="entego-v77"' sw.js
