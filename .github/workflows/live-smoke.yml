@@ -78,18 +78,19 @@ jobs:
           grep -q '"error":"INVALID_ROLE"' /tmp/register-probe.json
           echo "Registration request reached production auth validation without creating a user"
 
-      - name: Verify identity policy is fail-closed and private
+      - name: Verify identity storage and privacy policy
         shell: bash
         run: |
           set -euo pipefail
           code="$(curl -sS -o /tmp/identity-config.json -w '%{http_code}' --connect-timeout 8 --max-time 20 "$BASE_URL/api/identity/config")"
           cat /tmp/identity-config.json
           test "$code" = "200"
+          grep -q '"privateDocumentStorageConfigured":true' /tmp/identity-config.json
           grep -q '"documentsPublic":false' /tmp/identity-config.json
           grep -q '"fullNikStored":false' /tmp/identity-config.json
           grep -q '"fullBankAccountStored":false' /tmp/identity-config.json
           grep -q '"payoutGate":"identity-approved-required"' /tmp/identity-config.json
-          echo "Identity policy is private, minimized, and payout-gated"
+          echo "Private identity storage is active, minimized, non-public, and payout-gated"
 
       - name: Wait for directory timing instrumentation
         shell: bash
