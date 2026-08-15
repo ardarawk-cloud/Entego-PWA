@@ -7,6 +7,8 @@ on:
       - 'package.json'
       - 'capacitor.config.json'
       - 'native-runtime-flow.js'
+      - 'native-identity-camera-flow.js'
+      - 'resources/**'
       - '.github/workflows/android-apk.yml'
   workflow_dispatch:
 
@@ -16,9 +18,9 @@ permissions:
 jobs:
   build-debug-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
-      ENTEGO_ANDROID_VERSION: '1'
+      ENTEGO_ANDROID_VERSION: '1.0.0'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,35 +58,57 @@ jobs:
           set -euo pipefail
           test -f dist/index.html
           test -f dist/native-runtime-flow.js
+          test -f dist/native-identity-camera-flow.js
           python3 <<'PY'
           from pathlib import Path
           p=Path('dist/index.html')
           s=p.read_text()
           marker='</head>'
-          bridge='  <script src="/native-runtime-flow.js?v=1"></script>\n'+marker
+          bridge='  <script src="/native-runtime-flow.js?v=2"></script>\n  <script src="/native-identity-camera-flow.js?v=1"></script>\n'+marker
           if marker not in s:
               raise SystemExit('head marker missing from native bundle')
-          if 'native-runtime-flow.js?v=1' not in s:
+          if 'native-runtime-flow.js?v=2' not in s:
               s=s.replace(marker,bridge,1)
           p.write_text(s)
           PY
-          grep -q 'native-runtime-flow.js?v=1' dist/index.html
+          grep -q 'native-runtime-flow.js?v=2' dist/index.html
+          grep -q 'native-identity-camera-flow.js?v=1' dist/index.html
           grep -q 'assets/index.js' dist/index.html
           grep -q "https://entego-pwa.ardarawk.workers.dev" dist/native-runtime-flow.js
+          grep -q 'captureIdentity' dist/native-runtime-flow.js
           grep -q 'CapacitorHttp' capacitor.config.json
           grep -q 'CapacitorCookies' capacitor.config.json
           ! grep -q '"url"' capacitor.config.json
 
-      - name: Generate Android project
+      - name: Generate branded Android project
         shell: bash
         run: |
           set -euo pipefail
           rm -rf android
           npx cap add android
           npx cap sync android
+          npm run android:assets
           test -f android/gradlew
           test -f android/app/src/main/AndroidManifest.xml
           grep -q 'com.ardacore.entego' android/app/build.gradle
+          grep -R -q 'capacitor-camera' android
+          grep -q 'targetSdkVersion = 36' android/variables.gradle
+          test -f android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+
+      - name: Set Android version
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('android/app/build.gradle')
+          s=p.read_text()
+          s=re.sub(r'versionCode\s+\d+', 'versionCode 1', s, count=1)
+          s=re.sub(r'versionName\s+["\'][^"\']+["\']', 'versionName "1.0.0"', s, count=1)
+          p.write_text(s)
+          PY
+          grep -q 'versionCode 1' android/app/build.gradle
+          grep -q 'versionName "1.0.0"' android/app/build.gradle
 
       - name: Build debug APK
         shell: bash
@@ -95,15 +119,15 @@ jobs:
           ./gradlew assembleDebug --no-daemon --stacktrace
           cd ..
           test -f android/app/build/outputs/apk/debug/app-debug.apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk ENTEGO-Android-v1-debug.apk
-          sha256sum ENTEGO-Android-v1-debug.apk | tee ENTEGO-Android-v1-debug.sha256
+          cp android/app/build/outputs/apk/debug/app-debug.apk ENTEGO-Android-v1.0.0-camera-debug.apk
+          sha256sum ENTEGO-Android-v1.0.0-camera-debug.apk | tee ENTEGO-Android-v1.0.0-camera-debug.sha256
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1-debug
+          name: ENTEGO-Android-v1.0.0-camera-debug
           path: |
-            ENTEGO-Android-v1-debug.apk
-            ENTEGO-Android-v1-debug.sha256
+            ENTEGO-Android-v1.0.0-camera-debug.apk
+            ENTEGO-Android-v1.0.0-camera-debug.sha256
           if-no-files-found: error
           retention-days: 14
