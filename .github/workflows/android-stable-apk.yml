@@ -26,8 +26,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Dedicated workflow run numbers are monotonic. The 100000 offset
-          # guarantees this stable track is newer than historical debug builds.
           echo "ENTEGO_VERSION_CODE=$((100000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
 
       - name: Setup Node
@@ -115,7 +113,7 @@ jobs:
           grep -q "versionCode ${ENTEGO_VERSION_CODE}" android/app/build.gradle
           grep -q "versionName \"${ENTEGO_VERSION_NAME}\"" android/app/build.gradle
 
-      - name: Build release APK and AAB
+      - name: Build and align release APK/AAB
         shell: bash
         run: |
           set -euo pipefail
@@ -126,8 +124,12 @@ jobs:
           test -f android/app/build/outputs/apk/release/app-release-unsigned.apk
           test -f android/app/build/outputs/bundle/release/app-release.aab
           mkdir -p stable-out
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -f -p 4 \
+            android/app/build/outputs/apk/release/app-release-unsigned.apk \
+            stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-aligned-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -p 4 stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-aligned-unsigned.apk
           cp android/app/build/outputs/bundle/release/app-release.aab stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-unsigned.aab
+          cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" stable-out/apksigner.jar
 
       - name: Sign stable release with protected ENTEGO key
         if: ${{ env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '' }}
@@ -141,7 +143,7 @@ jobs:
             --ks-pass "pass:$ENTEGO_STORE_PASSWORD" \
             --key-pass "pass:$ENTEGO_KEY_PASSWORD" \
             --out stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.apk \
-            stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-unsigned.apk
+            stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-aligned-unsigned.apk
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.apk > stable-out/signing-certificate.txt
           cp stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-unsigned.aab stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.aab
           jarsigner -keystore "$RUNNER_TEMP/entego-upload.jks" -storepass "$ENTEGO_STORE_PASSWORD" -keypass "$ENTEGO_KEY_PASSWORD" stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable.aab "$ENTEGO_KEY_ALIAS"
@@ -164,7 +166,7 @@ jobs:
             echo "debugApkForUsers=false"
             echo "commit=${GITHUB_SHA}"
           } > stable-out/build-info.txt
-          sha256sum stable-out/* > stable-out/SHA256SUMS.txt
+          sha256sum stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-aligned-unsigned.apk stable-out/ENTEGO-Android-v${ENTEGO_VERSION_NAME}-stable-unsigned.aab > stable-out/SHA256SUMS.txt
 
       - name: Upload stable signed package
         if: ${{ env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '' }}
@@ -180,14 +182,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload unsigned candidate for protected offline signing
+      - name: Upload protected-signing candidate
         if: ${{ !(env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '') }}
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.4-UNSIGNED-DO-NOT-DISTRIBUTE
+          name: ENTEGO-Android-v1.0.4-PROTECTED-SIGNING-CANDIDATE
           path: |
-            stable-out/ENTEGO-Android-v1.0.4-stable-unsigned.apk
+            stable-out/ENTEGO-Android-v1.0.4-stable-aligned-unsigned.apk
             stable-out/ENTEGO-Android-v1.0.4-stable-unsigned.aab
+            stable-out/apksigner.jar
             stable-out/build-info.txt
             stable-out/SHA256SUMS.txt
           if-no-files-found: error
