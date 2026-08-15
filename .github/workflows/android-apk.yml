@@ -62,7 +62,7 @@ jobs:
           test -f dist/native-runtime-flow.js
           test -f dist/native-identity-camera-flow.js
           grep -Fq "if(document.querySelector('#entegoIdentityCenter'))return;" dist/identity-center-flow.js
-          grep -Fq "IDENTITY_UI_VERSION='77.1'" dist/identity-center-flow.js
+          grep -Fq "IDENTITY_UI_VERSION='77'" dist/identity-center-flow.js
           python3 <<'PY'
           from pathlib import Path
           p=Path('dist/index.html')
