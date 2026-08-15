@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="ENTEGO">
-  <rect width="1024" height="1024" rx="250" fill="#F97316"/>
-  <circle cx="512" cy="420" r="230" fill="#FFFFFF"/>
-  <path d="M470 300 L470 540 L670 420 Z" fill="#0F172A"/>
-  <path d="M365 630 L659 630 L512 835 Z" fill="#FFFFFF"/>
+  <path d="M512 92C326 92 180 238 180 422c0 231 265 454 332 507 67-53 332-276 332-507C844 238 698 92 512 92Z" fill="#F97316"/>
+  <circle cx="512" cy="405" r="220" fill="#102A55"/>
+  <path d="M455 294c0-24 27-38 47-25l173 111c19 12 19 40 0 52L502 543c-20 13-47-1-47-25V294Z" fill="#F97316"/>
+  <path d="M292 258c42-62 101-105 172-126" fill="none" stroke="#FFFFFF" stroke-opacity=".88" stroke-width="38" stroke-linecap="round"/>
 </svg>
