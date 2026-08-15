@@ -51,6 +51,11 @@ jobs:
           test -f dist/support-center-flow.js
           test -f vite.config.js
           test -f identity-api.js
+          test -f scripts/ensure-private-r2.mjs
+          grep -q "node scripts/ensure-private-r2.mjs" package.json
+          grep -q "WORKERS_CI!=='1'" scripts/ensure-private-r2.mjs
+          grep -q "entego-identity-private" scripts/ensure-private-r2.mjs
+          grep -q "r2','bucket','create'" scripts/ensure-private-r2.mjs
           grep -q "entryFileNames: 'assets/\[name\].js'" vite.config.js
           grep -q "chunkFileNames: 'assets/\[name\].js'" vite.config.js
           grep -q "assetFileNames: 'assets/\[name\]\[extname\]'" vite.config.js
@@ -58,6 +63,8 @@ jobs:
           ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.css' dist/index.html
           grep -q '"main":"./api-worker-v63.js"' wrangler.jsonc
           grep -q '"ENT_SUPPORT","class_name":"EntegoSupport"' wrangler.jsonc
+          grep -q '"binding":"ENT_IDENTITY_MEDIA"' wrangler.jsonc
+          grep -q '"bucket_name":"entego-identity-private"' wrangler.jsonc
           grep -q "RL_VERSION='77'" route-loader-flow.js
           grep -q 'identity-center-flow.js' route-loader-flow.js
           grep -q '@vite-ignore' route-loader-flow.js
