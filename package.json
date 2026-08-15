@@ -8,14 +8,17 @@
     "build": "node scripts/ensure-private-r2.mjs && vite build && cp manifest.webmanifest sw.js icon-*.png apple-touch-icon.png logo-header.png *-flow.js dist/",
     "preview": "vite preview",
     "android:sync": "npm run build && npx cap sync android",
+    "android:assets": "npx @capacitor/assets generate --android --assetPath resources --iconBackgroundColor '#0F172A' --iconBackgroundColorDark '#0F172A' --splashBackgroundColor '#0F172A' --splashBackgroundColorDark '#0F172A'",
     "android:doctor": "npx cap doctor android"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
+    "@capacitor/camera": "8.2.2",
     "@capacitor/core": "^8.5.0",
     "vite": "^7.1.1"
   },
   "devDependencies": {
+    "@capacitor/assets": "3.0.5",
     "@capacitor/cli": "^8.5.0"
   }
 }
