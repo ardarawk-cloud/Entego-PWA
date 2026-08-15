@@ -9,6 +9,8 @@ on:
       - 'identity-api.js'
       - 'partner-store-v2.js'
       - 'identity-center-flow.js'
+      - 'identity-submit-hotfix-flow.js'
+      - 'route-loader-flow.js'
       - 'admin-verification-flow.js'
       - 'production-guard-flow.js'
       - 'premium-ui-flow.js'
@@ -26,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      ENTEGO_ANDROID_VERSION: '1.0.2'
+      ENTEGO_ANDROID_VERSION: '1.0.3'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,6 +66,8 @@ jobs:
           set -euo pipefail
           test -f dist/index.html
           test -f dist/identity-center-flow.js
+          test -f dist/identity-submit-hotfix-flow.js
+          test -f dist/route-loader-flow.js
           test -f dist/premium-ui-flow.js
           test -f dist/native-runtime-flow.js
           test -f dist/native-identity-camera-flow.js
@@ -71,6 +75,9 @@ jobs:
           grep -Fq "IDENTITY_UI_VERSION='77'" dist/identity-center-flow.js
           grep -Fq 'KTP — WNI' dist/identity-center-flow.js
           grep -Fq 'Paspor — WNA / internasional' dist/identity-center-flow.js
+          grep -Fq "IDENTITY_SUBMIT_HOTFIX_VERSION='78'" dist/identity-submit-hotfix-flow.js
+          grep -Fq "identity-submit-hotfix-flow.js" dist/route-loader-flow.js
+          grep -Fq "RL_VERSION='78'" dist/route-loader-flow.js
           grep -Fq "import './premium-ui-flow.js'" dist/production-guard-flow.js
           grep -Fq 'entegoPremiumMonoStyle' dist/premium-ui-flow.js
           grep -Fq "IDENTITY_TYPES=['KTP','SIM','PASSPORT']" identity-api.js
@@ -119,12 +126,12 @@ jobs:
           import re
           p=Path('android/app/build.gradle')
           s=p.read_text()
-          s=re.sub(r'versionCode\s+\d+', 'versionCode 3', s, count=1)
-          s=re.sub(r'versionName\s+["\'][^"\']+["\']', 'versionName "1.0.2"', s, count=1)
+          s=re.sub(r'versionCode\s+\d+', 'versionCode 4', s, count=1)
+          s=re.sub(r'versionName\s+["\'][^"\']+["\']', 'versionName "1.0.3"', s, count=1)
           p.write_text(s)
           PY
-          grep -q 'versionCode 3' android/app/build.gradle
-          grep -q 'versionName "1.0.2"' android/app/build.gradle
+          grep -q 'versionCode 4' android/app/build.gradle
+          grep -q 'versionName "1.0.3"' android/app/build.gradle
 
       - name: Build debug APK
         shell: bash
@@ -135,15 +142,15 @@ jobs:
           ./gradlew assembleDebug --no-daemon --stacktrace
           cd ..
           test -f android/app/build/outputs/apk/debug/app-debug.apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk ENTEGO-Android-v1.0.2-premium-kyc.apk
-          sha256sum ENTEGO-Android-v1.0.2-premium-kyc.apk | tee ENTEGO-Android-v1.0.2-premium-kyc.sha256
+          cp android/app/build/outputs/apk/debug/app-debug.apk ENTEGO-Android-v1.0.3-kyc-submit-fix.apk
+          sha256sum ENTEGO-Android-v1.0.3-kyc-submit-fix.apk | tee ENTEGO-Android-v1.0.3-kyc-submit-fix.sha256
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.2-premium-kyc
+          name: ENTEGO-Android-v1.0.3-kyc-submit-fix
           path: |
-            ENTEGO-Android-v1.0.2-premium-kyc.apk
-            ENTEGO-Android-v1.0.2-premium-kyc.sha256
+            ENTEGO-Android-v1.0.3-kyc-submit-fix.apk
+            ENTEGO-Android-v1.0.3-kyc-submit-fix.sha256
           if-no-files-found: error
           retention-days: 14
