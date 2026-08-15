@@ -4,7 +4,7 @@ const enc = new TextEncoder();
 const clean = (v, max = 300) => String(v ?? "").trim().slice(0, max);
 const hex = bytes => Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
 const unhex = value => new Uint8Array((String(value).match(/.{1,2}/g) || []).map(x => parseInt(x, 16)));
-const randomHex = (n = 32) => { const b = new UintArray?new Uint8Array(n):new Uint8Array(n); crypto.getRandomValues(b); return hex(b); };
+const randomHex = (n = 32) => { const b = new Uint8Array(n); crypto.getRandomValues(b); return hex(b); };
 const sha256Hex = async value => hex(new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(String(value)))));
 const publicUser = row => row ? ({id:row.id,email:row.email,displayName:row.display_name,role:row.role,status:row.status,verified:Boolean(row.verified),createdAt:row.created_at}) : null;
 const DUMMY_SALT='d4a956ba3fe05dcf71c1bdb319266c9a';
@@ -58,11 +58,23 @@ export class EntegoAuth extends DurableObject {
         reset_at INTEGER NOT NULL,
         updated_at TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS data_requests (
+        id TEXT PRIMARY KEY,
+        request_type TEXT NOT NULL,
+        email TEXT NOT NULL,
+        user_id TEXT NOT NULL DEFAULT '',
+        details TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
       CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
       CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON sessions(expires_at);
       CREATE INDEX IF NOT EXISTS idx_booking_access_user ON booking_access(user_id);
       CREATE INDEX IF NOT EXISTS idx_users_role_verified ON users(role,verified);
       CREATE INDEX IF NOT EXISTS idx_rate_limit_reset ON rate_limits(reset_at);
+      CREATE INDEX IF NOT EXISTS idx_data_requests_email ON data_requests(email,created_at);
+      CREATE INDEX IF NOT EXISTS idx_data_requests_status ON data_requests(status,created_at);
     `);
   }
 
@@ -114,6 +126,10 @@ export class EntegoAuth extends DurableObject {
     return publicUser(this.sql.exec(`SELECT * FROM users WHERE id = ? LIMIT 1`, clean(id, 100)).toArray()[0]);
   }
 
+  async getUserByEmail(email) {
+    return publicUser(this.sql.exec(`SELECT * FROM users WHERE email = ? LIMIT 1`, clean(email,160).toLowerCase()).toArray()[0]);
+  }
+
   async getSession(rawToken) {
     if (!rawToken) return null;
     const tokenHash = await sha256Hex(rawToken);
@@ -132,6 +148,30 @@ export class EntegoAuth extends DurableObject {
     return true;
   }
   async logoutAll(userId){this.sql.exec(`DELETE FROM sessions WHERE user_id=?`,clean(userId,100));return true}
+
+  async createDataRequest(input={}){
+    const type=clean(input.type,40),email=clean(input.email,160).toLowerCase(),details=clean(input.details,1000),userId=clean(input.userId,100);
+    if(!['account_deletion','privacy_inquiry'].includes(type))throw new Error('INVALID_DATA_REQUEST_TYPE');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('INVALID_EMAIL');
+    const id=`DR-${crypto.randomUUID()}`,now=new Date().toISOString();
+    this.sql.exec(`INSERT INTO data_requests(id,request_type,email,user_id,details,status,created_at,updated_at) VALUES(?,?,?,?,?,'pending',?,?)`,id,type,email,userId,details,now,now);
+    return {id,type,email,status:'pending',createdAt:now};
+  }
+
+  async listDataRequests(limit=200,status=''){
+    const safeLimit=Math.max(1,Math.min(500,Number(limit)||200)),safeStatus=clean(status,30);
+    const rows=safeStatus?this.sql.exec(`SELECT * FROM data_requests WHERE status=? ORDER BY created_at DESC LIMIT ?`,safeStatus,safeLimit).toArray():this.sql.exec(`SELECT * FROM data_requests ORDER BY created_at DESC LIMIT ?`,safeLimit).toArray();
+    return rows.map(r=>({id:r.id,type:r.request_type,email:r.email,userId:r.user_id,details:r.details,status:r.status,createdAt:r.created_at,updatedAt:r.updated_at}));
+  }
+
+  async setDataRequestStatus(id,status){
+    const rid=clean(id,100),next=clean(status,30);
+    if(!['pending','verifying','processing','completed','rejected'].includes(next))throw new Error('INVALID_DATA_REQUEST_STATUS');
+    const now=new Date().toISOString();
+    this.sql.exec(`UPDATE data_requests SET status=?,updated_at=? WHERE id=?`,next,now,rid);
+    const row=this.sql.exec(`SELECT * FROM data_requests WHERE id=? LIMIT 1`,rid).toArray()[0];
+    return row?{id:row.id,type:row.request_type,email:row.email,userId:row.user_id,details:row.details,status:row.status,createdAt:row.created_at,updatedAt:row.updated_at}:null;
+  }
 
   async bindBooking(userId, bookingId, accessRole = "customer") {
     const uid=clean(userId,100),bid=clean(bookingId,120),role=clean(accessRole,20);
