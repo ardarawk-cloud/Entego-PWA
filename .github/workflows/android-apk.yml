@@ -60,15 +60,16 @@ jobs:
           from pathlib import Path
           p=Path('dist/index.html')
           s=p.read_text()
-          marker='<script type="module" src="/main.js"></script>'
-          bridge='<script src="/native-runtime-flow.js?v=1"></script>\n  '+marker
+          marker='</head>'
+          bridge='  <script src="/native-runtime-flow.js?v=1"></script>\n'+marker
           if marker not in s:
-              raise SystemExit('main.js marker missing from native bundle')
+              raise SystemExit('head marker missing from native bundle')
           if 'native-runtime-flow.js?v=1' not in s:
               s=s.replace(marker,bridge,1)
           p.write_text(s)
           PY
           grep -q 'native-runtime-flow.js?v=1' dist/index.html
+          grep -q 'assets/index.js' dist/index.html
           grep -q "https://entego-pwa.ardarawk.workers.dev" dist/native-runtime-flow.js
           grep -q 'CapacitorHttp' capacitor.config.json
           grep -q 'CapacitorCookies' capacitor.config.json
