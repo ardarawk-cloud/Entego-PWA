@@ -6,7 +6,12 @@ on:
     paths:
       - 'package.json'
       - 'capacitor.config.json'
+      - 'identity-api.js'
+      - 'partner-store-v2.js'
       - 'identity-center-flow.js'
+      - 'admin-verification-flow.js'
+      - 'production-guard-flow.js'
+      - 'premium-ui-flow.js'
       - 'native-runtime-flow.js'
       - 'native-identity-camera-flow.js'
       - 'resources/**'
@@ -21,8 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      ENTEGO_VERSION_NAME: '1.0.1'
-      ENTEGO_VERSION_CODE: '2'
+      ENTEGO_VERSION_NAME: '1.0.2'
+      ENTEGO_VERSION_CODE: '3'
       ENTEGO_KEYSTORE_B64: ${{ secrets.ENTEGO_ANDROID_KEYSTORE_B64 }}
       ENTEGO_KEY_ALIAS: ${{ secrets.ENTEGO_ANDROID_KEY_ALIAS }}
       ENTEGO_STORE_PASSWORD: ${{ secrets.ENTEGO_ANDROID_STORE_PASSWORD }}
@@ -58,22 +63,29 @@ jobs:
       - name: Build ENTEGO web bundle
         run: npm run build
 
-      - name: Prepare native release shell
+      - name: Verify premium KYC release shell
         shell: bash
         run: |
           set -euo pipefail
           test -f dist/index.html
           test -f dist/identity-center-flow.js
+          test -f dist/premium-ui-flow.js
           test -f dist/native-runtime-flow.js
           test -f dist/native-identity-camera-flow.js
           grep -Fq "if(document.querySelector('#entegoIdentityCenter'))return;" dist/identity-center-flow.js
           grep -Fq "IDENTITY_UI_VERSION='77'" dist/identity-center-flow.js
+          grep -Fq 'KTP — WNI' dist/identity-center-flow.js
+          grep -Fq 'Paspor — WNA / internasional' dist/identity-center-flow.js
+          grep -Fq "import './premium-ui-flow.js'" dist/production-guard-flow.js
+          grep -Fq 'entegoPremiumMonoStyle' dist/premium-ui-flow.js
+          grep -Fq "IDENTITY_TYPES=['KTP','SIM','PASSPORT']" identity-api.js
+          grep -Fq "ID_TYPES=new Set(['KTP','SIM','PASSPORT'])" partner-store-v2.js
           python3 <<'PY'
           from pathlib import Path
           p=Path('dist/index.html')
           s=p.read_text()
           marker='</head>'
-          bridge='  <script src="/native-runtime-flow.js?v=2"></script>\n  <script src="/native-identity-camera-flow.js?v=1"></script>\n'+marker
+          bridge='  <script src="/native-runtime-flow.js?v=2"></script>\n  <script src="/native-identity-camera-flow.js?v=2"></script>\n'+marker
           if marker not in s:
               raise SystemExit('head marker missing from native bundle')
           if 'native-runtime-flow.js?v=2' not in s:
@@ -81,7 +93,7 @@ jobs:
           p.write_text(s)
           PY
           grep -q 'native-runtime-flow.js?v=2' dist/index.html
-          grep -q 'native-identity-camera-flow.js?v=1' dist/index.html
+          grep -q 'native-identity-camera-flow.js?v=2' dist/index.html
           grep -q 'captureIdentity' dist/native-runtime-flow.js
           grep -q 'assets/index.js' dist/index.html
           grep -q 'CapacitorHttp' capacitor.config.json
@@ -129,8 +141,8 @@ jobs:
           test -f android/app/build/outputs/apk/release/app-release-unsigned.apk
           test -f android/app/build/outputs/bundle/release/app-release.aab
           mkdir -p release-out
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-out/ENTEGO-Android-v1.0.1-release-unsigned.apk
-          cp android/app/build/outputs/bundle/release/app-release.aab release-out/ENTEGO-Android-v1.0.1-release-unsigned.aab
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-out/ENTEGO-Android-v1.0.2-release-unsigned.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab release-out/ENTEGO-Android-v1.0.2-release-unsigned.aab
 
       - name: Sign release with protected upload key
         if: ${{ env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '' }}
@@ -138,11 +150,11 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s' "$ENTEGO_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/entego-upload.jks"
-          cp release-out/ENTEGO-Android-v1.0.1-release-unsigned.aab release-out/ENTEGO-Android-v1.0.1-release.aab
-          jarsigner -keystore "$RUNNER_TEMP/entego-upload.jks" -storepass "$ENTEGO_STORE_PASSWORD" -keypass "$ENTEGO_KEY_PASSWORD" release-out/ENTEGO-Android-v1.0.1-release.aab "$ENTEGO_KEY_ALIAS"
-          jarsigner -verify -verbose -certs release-out/ENTEGO-Android-v1.0.1-release.aab >/dev/null
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$RUNNER_TEMP/entego-upload.jks" --ks-key-alias "$ENTEGO_KEY_ALIAS" --ks-pass "pass:$ENTEGO_STORE_PASSWORD" --key-pass "pass:$ENTEGO_KEY_PASSWORD" --out release-out/ENTEGO-Android-v1.0.1-release.apk release-out/ENTEGO-Android-v1.0.1-release-unsigned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs release-out/ENTEGO-Android-v1.0.1-release.apk > release-out/signing-certificate.txt
+          cp release-out/ENTEGO-Android-v1.0.2-release-unsigned.aab release-out/ENTEGO-Android-v1.0.2-release.aab
+          jarsigner -keystore "$RUNNER_TEMP/entego-upload.jks" -storepass "$ENTEGO_STORE_PASSWORD" -keypass "$ENTEGO_KEY_PASSWORD" release-out/ENTEGO-Android-v1.0.2-release.aab "$ENTEGO_KEY_ALIAS"
+          jarsigner -verify -verbose -certs release-out/ENTEGO-Android-v1.0.2-release.aab >/dev/null
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$RUNNER_TEMP/entego-upload.jks" --ks-key-alias "$ENTEGO_KEY_ALIAS" --ks-pass "pass:$ENTEGO_STORE_PASSWORD" --key-pass "pass:$ENTEGO_KEY_PASSWORD" --out release-out/ENTEGO-Android-v1.0.2-release.apk release-out/ENTEGO-Android-v1.0.2-release-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs release-out/ENTEGO-Android-v1.0.2-release.apk > release-out/signing-certificate.txt
           rm -f "$RUNNER_TEMP/entego-upload.jks"
 
       - name: Record release metadata
@@ -150,7 +162,7 @@ jobs:
         run: |
           set -euo pipefail
           SIGNING='unsigned-candidate'
-          if [ -f release-out/ENTEGO-Android-v1.0.1-release.aab ]; then SIGNING='signed'; fi
+          if [ -f release-out/ENTEGO-Android-v1.0.2-release.aab ]; then SIGNING='signed'; fi
           {
             echo "ENTEGO Android Release"
             echo "versionName=${ENTEGO_VERSION_NAME}"
@@ -161,13 +173,16 @@ jobs:
             echo "signing=${SIGNING}"
             echo "nativeCamera=true"
             echo "stableKycInput=true"
+            echo "identityTypes=KTP,SIM,PASSPORT"
+            echo "premiumMonochromeIcons=true"
+            echo "pinPlayBrand=true"
           } > release-out/build-info.txt
           sha256sum release-out/* > release-out/SHA256SUMS.txt
 
       - name: Upload release candidate
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.1-release
+          name: ENTEGO-Android-v1.0.2-release
           path: release-out/
           if-no-files-found: error
           retention-days: 30
