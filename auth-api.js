@@ -51,6 +51,23 @@ export async function handleAuthApi(request,env){
   if(sessionMatch&&request.method==='DELETE'){
    const user=await getRequestUser(request,env);if(!user)return json({ok:false,error:'unauthenticated'},401);const id=decodeURIComponent(sessionMatch[1]),sessions=await store.listSessions(user.id,token),current=sessions.find(x=>x.id===id)?.current;await store.revokeSession(user.id,id);return json({ok:true,currentRevoked:Boolean(current)},200,current?{'set-cookie':clearCookie()}:{});
   }
+  if(url.pathname==='/api/auth/data-request'&&request.method==='POST'){
+   const body=await request.json().catch(()=>({})),submitted=emailKey(body),blocked=await enforce(store,[['data-request-ip',ip,10,86400],['data-request-email',submitted,5,86400]]);if(blocked)return blocked;
+   const user=await getRequestUser(request,env),email=user?.email||submitted;
+   const result=await store.createDataRequest({type:body.type,email,details:body.details,userId:user?.id||''});
+   return json({ok:true,requestId:result.id,status:result.status},201);
+  }
+  if(url.pathname==='/api/auth/admin/data-requests'&&request.method==='GET'){
+   const user=await getRequestUser(request,env);if(user?.role!=='admin')return json({ok:false,error:'admin_required'},403);
+   const limit=Math.max(1,Math.min(500,Number(url.searchParams.get('limit'))||200)),status=String(url.searchParams.get('status')||'');
+   return json({ok:true,requests:await store.listDataRequests(limit,status)});
+  }
+  const dataRequestMatch=url.pathname.match(/^\/api\/auth\/admin\/data-requests\/([^/]+)$/);
+  if(dataRequestMatch&&request.method==='POST'){
+   const user=await getRequestUser(request,env);if(user?.role!=='admin')return json({ok:false,error:'admin_required'},403);
+   const body=await request.json().catch(()=>({})),updated=await store.setDataRequestStatus(decodeURIComponent(dataRequestMatch[1]),body.status);
+   return updated?json({ok:true,request:updated}):json({ok:false,error:'data_request_not_found'},404);
+  }
   if(url.pathname==='/api/auth/admin/bootstrap'&&request.method==='POST'){
    const blocked=await enforce(store,[['admin-bootstrap-ip',ip,8,900]]);if(blocked)return blocked;
    if(!env.ADMIN_BOOTSTRAP_KEY)return json({ok:false,error:'admin_bootstrap_not_configured'},503);
@@ -64,7 +81,7 @@ export async function handleAuthApi(request,env){
   const message=String(error?.message||error);
   if(message==='INVALID_CREDENTIALS')return json({ok:false,error:'INVALID_CREDENTIALS'},401);
   if(message==='EMAIL_EXISTS')return json({ok:false,error:'EMAIL_EXISTS'},409);
-  const bad=new Set(['INVALID_EMAIL','INVALID_PASSWORD','DISPLAY_NAME_REQUIRED','INVALID_ROLE']);
+  const bad=new Set(['INVALID_EMAIL','INVALID_PASSWORD','DISPLAY_NAME_REQUIRED','INVALID_ROLE','INVALID_DATA_REQUEST_TYPE','INVALID_DATA_REQUEST_STATUS']);
   return json({ok:false,error:bad.has(message)?message:'auth_server_error'},bad.has(message)?400:500);
  }
 }
