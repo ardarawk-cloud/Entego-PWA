@@ -1,5 +1,6 @@
 (()=>{
   const nativeCamera=()=>window.ENTEGONativeCamera;
+  const identityLabel=box=>{const t=box?.querySelector('#icIdType')?.value||'KTP';return t==='PASSPORT'?'Paspor':t};
   const status=(box,text,ok=false)=>{
     const el=box?.querySelector('#icStatus');
     if(!el)return;
@@ -23,7 +24,8 @@
     btn.type='button';
     btn.className='btn primary';
     btn.style.cssText='width:100%;margin-top:8px';
-    btn.textContent=kind==='ktp'?'Ambil Foto KTP dengan Kamera':'Ambil Selfie dengan Kamera';
+    const setIdleLabel=()=>{btn.textContent=kind==='ktp'?`Ambil Foto ${identityLabel(box)} dengan Kamera`:'Ambil Selfie dengan Kamera'};
+    setIdleLabel();
     input.before(btn);
     if(kind==='selfie'){
       const hint=document.createElement('div');
@@ -32,17 +34,17 @@
       hint.textContent='Gunakan kamera depan dan pastikan wajah terlihat jelas.';
       btn.after(hint);
     }
+    if(kind==='ktp')window.addEventListener('entego:identity-type-change',()=>{if(btn.isConnected&&!btn.disabled)setIdleLabel()});
     btn.addEventListener('click',async()=>{
       const camera=nativeCamera();
       if(!camera?.available){status(box,'Kamera native belum tersedia pada build ini.');return}
-      const original=btn.textContent;
       btn.disabled=true;
-      btn.textContent=kind==='ktp'?'Membuka kamera KTP…':'Membuka kamera selfie…';
+      btn.textContent=kind==='ktp'?`Membuka kamera ${identityLabel(box)}…`:'Membuka kamera selfie…';
       try{
         const captured=await camera.captureIdentity(kind);
         if(!captured?.file)throw new Error('native_camera_empty_result');
         assignFile(input,captured.file);
-        status(box,kind==='ktp'?'Foto KTP siap diunggah privat.':'Selfie siap diunggah privat.',true);
+        status(box,kind==='ktp'?`Foto ${identityLabel(box)} siap diunggah privat.`:'Selfie siap diunggah privat.',true);
         uploadButton.click();
       }catch(error){
         const code=String(error?.code||error?.message||'').toLowerCase();
@@ -50,7 +52,7 @@
         else if(code.includes('identity_media_too_large'))status(box,'Ukuran foto terlalu besar. Coba ulang dengan kondisi cahaya yang baik.');
         else status(box,'Kamera belum dapat mengambil foto. Coba lagi atau gunakan pilihan file.');
       }finally{
-        if(btn.isConnected){btn.disabled=false;btn.textContent=original}
+        if(btn.isConnected){btn.disabled=false;setIdleLabel()}
       }
     });
   };
