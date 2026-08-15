@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cp manifest.webmanifest sw.js icon-*.png apple-touch-icon.png logo-header.png *-flow.js dist/",
+    "build": "node scripts/ensure-private-r2.mjs && vite build && cp manifest.webmanifest sw.js icon-*.png apple-touch-icon.png logo-header.png *-flow.js dist/",
     "preview": "vite preview"
   },
   "dependencies": {
