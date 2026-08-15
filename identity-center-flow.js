@@ -1,4 +1,4 @@
-const IDENTITY_UI_VERSION='77.1';
+const IDENTITY_UI_VERSION='77';
 const icRoute=()=>localStorage.getItem('entego_route')||'home';
 const icUser=()=>{try{return JSON.parse(localStorage.getItem('entego_auth_user')||'null')}catch{return null}};
 const icEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
