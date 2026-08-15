@@ -63,12 +63,12 @@ jobs:
           set -euo pipefail
           test -f dist/index.html
           test -f dist/identity-center-flow.js
-          test -f dist/identity-submit-fix-flow.js
+          test -f dist/identity-submit-hotfix-flow.js
           test -f dist/native-runtime-flow.js
           test -f dist/native-identity-camera-flow.js
           grep -Fq 'KTP — WNI' dist/identity-center-flow.js
           grep -Fq 'Paspor — WNA / internasional' dist/identity-center-flow.js
-          grep -Fq 'KYC_SUBMIT_FIX_VERSION' dist/identity-submit-fix-flow.js
+          grep -Fq "IDENTITY_SUBMIT_HOTFIX_VERSION='78'" dist/identity-submit-hotfix-flow.js
           grep -Fq "IDENTITY_TYPES=['KTP','SIM','PASSPORT']" identity-api.js
           grep -Fq "ID_TYPES=new Set(['KTP','SIM','PASSPORT'])" partner-store-v2.js
           python3 <<'PY'
