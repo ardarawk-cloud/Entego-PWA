@@ -1,4 +1,4 @@
-const RL_VERSION='77';
+const RL_VERSION='78';
 const rlLoaded=new Set();
 let rlRoute='';
 const rlCurrent=()=>localStorage.getItem('entego_route')||'home';
@@ -20,7 +20,7 @@ async function rlForRoute(route){
  if(['chatCustomer','partnerChat'].includes(route))modules.push('server-chat-flow.js');
  if(PARTNER_BASE.includes(route))modules.push('server-partner-flow.js');
  if(['partner','partnerOnboarding','partnerProfile'].includes(route))modules.push('partner-category-flow.js','partner-profile-flow.js','partner-marketplace-flow.js');
- if(['profile','partner','partnerOnboarding'].includes(route))modules.push('identity-center-flow.js');
+ if(['profile','partner','partnerOnboarding'].includes(route))modules.push('identity-center-flow.js','identity-submit-hotfix-flow.js');
  if(['partner','partnerPackages','partnerCalendar','detail','booking','checkout'].includes(route))modules.push('partner-offer-flow.js');
  if(route==='partnerPortfolio')modules.push('partner-marketplace-flow.js','portfolio-media-flow.js');
  if(route==='profile')modules.push('security-sessions-flow.js','privacy-center-flow.js');
