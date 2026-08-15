@@ -1,0 +1,109 @@
+name: ENTEGO ANDROID APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'capacitor.config.json'
+      - 'native-runtime-flow.js'
+      - '.github/workflows/android-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      WORKERS_CI: '1'
+      ENTEGO_ANDROID_VERSION: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0'
+
+      - name: Install web and Capacitor dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build ENTEGO web bundle
+        run: npm run build
+
+      - name: Prepare native-only runtime bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          test -f dist/native-runtime-flow.js
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('dist/index.html')
+          s=p.read_text()
+          marker='<script type="module" src="/main.js"></script>'
+          bridge='<script src="/native-runtime-flow.js?v=1"></script>\n  '+marker
+          if marker not in s:
+              raise SystemExit('main.js marker missing from native bundle')
+          if 'native-runtime-flow.js?v=1' not in s:
+              s=s.replace(marker,bridge,1)
+          p.write_text(s)
+          PY
+          grep -q 'native-runtime-flow.js?v=1' dist/index.html
+          grep -q "https://entego-pwa.ardarawk.workers.dev" dist/native-runtime-flow.js
+          grep -q 'CapacitorHttp' capacitor.config.json
+          grep -q 'CapacitorCookies' capacitor.config.json
+          ! grep -q '"url"' capacitor.config.json
+
+      - name: Generate Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android
+          npx cap add android
+          npx cap sync android
+          test -f android/gradlew
+          test -f android/app/src/main/AndroidManifest.xml
+          grep -q 'com.ardacore.entego' android/app/build.gradle
+
+      - name: Build debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          cd ..
+          test -f android/app/build/outputs/apk/debug/app-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk ENTEGO-Android-v1-debug.apk
+          sha256sum ENTEGO-Android-v1-debug.apk | tee ENTEGO-Android-v1-debug.sha256
+
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENTEGO-Android-v1-debug
+          path: |
+            ENTEGO-Android-v1-debug.apk
+            ENTEGO-Android-v1-debug.sha256
+          if-no-files-found: error
+          retention-days: 14

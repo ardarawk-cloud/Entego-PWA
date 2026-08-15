@@ -1,0 +1,21 @@
+{
+  "appId": "com.ardacore.entego",
+  "appName": "ENTEGO",
+  "webDir": "dist",
+  "loggingBehavior": "debug",
+  "backgroundColor": "#0f172a",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false,
+    "appendUserAgent": " ENTEGO-Android/1.0"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "CapacitorCookies": {
+      "enabled": true
+    }
+  }
+}

@@ -6,9 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/ensure-private-r2.mjs && vite build && cp manifest.webmanifest sw.js icon-*.png apple-touch-icon.png logo-header.png *-flow.js dist/",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "android:sync": "npm run build && npx cap sync android",
+    "android:doctor": "npx cap doctor android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
     "vite": "^7.1.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0"
   }
 }
