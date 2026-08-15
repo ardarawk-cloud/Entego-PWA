@@ -28,6 +28,7 @@ jobs:
             loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=77" 2>/dev/null || true)"
             auth="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/auth-flow.js?v=77" 2>/dev/null || true)"
             identity="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/identity-center-flow.js?v=77" 2>/dev/null || true)"
+            premium="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/premium-ui-flow.js" 2>/dev/null || true)"
             entry="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/assets/index.js" 2>/dev/null || true)"
             css="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/assets/index.css" 2>/dev/null || true)"
             if grep -q "$EXPECTED_BOOT" <<<"$index" \
@@ -52,10 +53,14 @@ jobs:
               && grep -q "AUTH_UI_VERSION='77'" <<<"$auth" \
               && grep -q 'Verifikasi identitas diperlukan' <<<"$auth" \
               && grep -q "IDENTITY_UI_VERSION='77'" <<<"$identity" \
+              && grep -q 'KTP — WNI' <<<"$identity" \
+              && grep -q 'Paspor — WNA / internasional' <<<"$identity" \
               && grep -q 'Payout terkunci' <<<"$identity" \
+              && grep -q 'entegoPremiumMonoStyle' <<<"$premium" \
+              && grep -q 'entego-brand-mark' <<<"$premium" \
               && test -n "$entry" \
               && test -n "$css"; then
-              echo "Production exposes ENTEGO v77 identity verification UX"
+              echo "Production exposes ENTEGO v77 premium identity verification UX"
               exit 0
             fi
             echo "Attempt $attempt/18: production v77 assets are still converging"
@@ -87,10 +92,11 @@ jobs:
           test "$code" = "200"
           grep -q '"privateDocumentStorageConfigured":true' /tmp/identity-config.json
           grep -q '"documentsPublic":false' /tmp/identity-config.json
+          grep -q '"identityTypes":\["KTP","SIM","PASSPORT"\]' /tmp/identity-config.json
           grep -q '"fullNikStored":false' /tmp/identity-config.json
           grep -q '"fullBankAccountStored":false' /tmp/identity-config.json
           grep -q '"payoutGate":"identity-approved-required"' /tmp/identity-config.json
-          echo "Private identity storage is active, minimized, non-public, and payout-gated"
+          echo "Private multi-ID identity storage is active, minimized, non-public, and payout-gated"
 
       - name: Wait for directory timing instrumentation
         shell: bash
