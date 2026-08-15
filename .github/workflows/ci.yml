@@ -40,6 +40,9 @@ jobs:
           test -f dist/route-loader-flow.js
           test -f dist/production-truth-gate-flow.js
           test -f dist/production-guard-flow.js
+          test -f dist/play-store-compliance-flow.js
+          test -f dist/privacy-policy.html
+          test -f dist/delete-account.html
           test -f dist/premium-ui-flow.js
           test -f dist/auth-flow.js
           test -f dist/action-center-flow.js
@@ -74,6 +77,7 @@ jobs:
           grep -q 'sanitizeHome' production-truth-gate-flow.js
           grep -q 'ptgScheduled' production-truth-gate-flow.js
           grep -q "account-route-fix-flow.js?v=77" index.html
+          grep -q "play-store-compliance-flow.js?v=1" index.html
           grep -q "route-loader-flow.js?v=77" index.html
           grep -q "production-truth-gate-flow.js?v=77" index.html
           grep -q "production-guard-flow.js?v=77" index.html
@@ -87,7 +91,13 @@ jobs:
           grep -q "updateViaCache:'none'" index.html
           grep -q 'visibilitychange' index.html
           ! grep -q 'location.reload()' index.html
-          test "$(grep -o '<script type=\"module\" src=' index.html | wc -l)" -eq 5
+          test "$(grep -o '<script type=\"module\" src=' index.html | wc -l)" -eq 6
+          grep -q 'Kebijakan Privasi' privacy-policy.html
+          grep -q 'Penghapusan Akun' delete-account.html
+          grep -q '/api/auth/data-request' delete-account.html
+          grep -q 'PRIVASI & KONTROL DATA' play-store-compliance-flow.js
+          grep -q '/privacy-policy.html' play-store-compliance-flow.js
+          grep -q '/delete-account.html' play-store-compliance-flow.js
           grep -q "ARF_VERSION='77'" account-route-fix-flow.js
           grep -q 'Metode Pembayaran' account-route-fix-flow.js
           grep -q 'Admin Control Center' account-route-fix-flow.js
