@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/ensure-private-r2.mjs && vite build && cp manifest.webmanifest sw.js icon-*.png apple-touch-icon.png logo-header.png privacy-policy.html delete-account.html *-flow.js dist/",
+    "build": "node scripts/ensure-private-r2.mjs && vite build && cp manifest.webmanifest sw.js icon-*.png apple-touch-icon.png logo-header.png *-flow.js dist/",
     "preview": "vite preview",
     "android:sync": "npm run build && npx cap sync android",
     "android:assets": "npx @capacitor/assets generate --android --assetPath resources --iconBackgroundColor '#0F172A' --iconBackgroundColorDark '#0F172A' --splashBackgroundColor '#0F172A' --splashBackgroundColorDark '#0F172A'",
