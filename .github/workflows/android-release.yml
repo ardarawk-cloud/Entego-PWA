@@ -6,6 +6,7 @@ on:
     paths:
       - 'package.json'
       - 'capacitor.config.json'
+      - 'identity-center-flow.js'
       - 'native-runtime-flow.js'
       - 'native-identity-camera-flow.js'
       - 'resources/**'
@@ -20,8 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      ENTEGO_VERSION_NAME: '1.0.0'
-      ENTEGO_VERSION_CODE: '1'
+      ENTEGO_VERSION_NAME: '1.0.1'
+      ENTEGO_VERSION_CODE: '2'
       ENTEGO_KEYSTORE_B64: ${{ secrets.ENTEGO_ANDROID_KEYSTORE_B64 }}
       ENTEGO_KEY_ALIAS: ${{ secrets.ENTEGO_ANDROID_KEY_ALIAS }}
       ENTEGO_STORE_PASSWORD: ${{ secrets.ENTEGO_ANDROID_STORE_PASSWORD }}
@@ -62,8 +63,11 @@ jobs:
         run: |
           set -euo pipefail
           test -f dist/index.html
+          test -f dist/identity-center-flow.js
           test -f dist/native-runtime-flow.js
           test -f dist/native-identity-camera-flow.js
+          grep -Fq "if(document.querySelector('#entegoIdentityCenter'))return;" dist/identity-center-flow.js
+          grep -Fq "IDENTITY_UI_VERSION='77.1'" dist/identity-center-flow.js
           python3 <<'PY'
           from pathlib import Path
           p=Path('dist/index.html')
@@ -125,8 +129,8 @@ jobs:
           test -f android/app/build/outputs/apk/release/app-release-unsigned.apk
           test -f android/app/build/outputs/bundle/release/app-release.aab
           mkdir -p release-out
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-out/ENTEGO-Android-v1.0.0-release-unsigned.apk
-          cp android/app/build/outputs/bundle/release/app-release.aab release-out/ENTEGO-Android-v1.0.0-release-unsigned.aab
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-out/ENTEGO-Android-v1.0.1-release-unsigned.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab release-out/ENTEGO-Android-v1.0.1-release-unsigned.aab
 
       - name: Sign release with protected upload key
         if: ${{ env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '' }}
@@ -134,11 +138,11 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s' "$ENTEGO_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/entego-upload.jks"
-          cp release-out/ENTEGO-Android-v1.0.0-release-unsigned.aab release-out/ENTEGO-Android-v1.0.0-release.aab
-          jarsigner -keystore "$RUNNER_TEMP/entego-upload.jks" -storepass "$ENTEGO_STORE_PASSWORD" -keypass "$ENTEGO_KEY_PASSWORD" release-out/ENTEGO-Android-v1.0.0-release.aab "$ENTEGO_KEY_ALIAS"
-          jarsigner -verify -verbose -certs release-out/ENTEGO-Android-v1.0.0-release.aab >/dev/null
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$RUNNER_TEMP/entego-upload.jks" --ks-key-alias "$ENTEGO_KEY_ALIAS" --ks-pass "pass:$ENTEGO_STORE_PASSWORD" --key-pass "pass:$ENTEGO_KEY_PASSWORD" --out release-out/ENTEGO-Android-v1.0.0-release.apk release-out/ENTEGO-Android-v1.0.0-release-unsigned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs release-out/ENTEGO-Android-v1.0.0-release.apk > release-out/signing-certificate.txt
+          cp release-out/ENTEGO-Android-v1.0.1-release-unsigned.aab release-out/ENTEGO-Android-v1.0.1-release.aab
+          jarsigner -keystore "$RUNNER_TEMP/entego-upload.jks" -storepass "$ENTEGO_STORE_PASSWORD" -keypass "$ENTEGO_KEY_PASSWORD" release-out/ENTEGO-Android-v1.0.1-release.aab "$ENTEGO_KEY_ALIAS"
+          jarsigner -verify -verbose -certs release-out/ENTEGO-Android-v1.0.1-release.aab >/dev/null
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$RUNNER_TEMP/entego-upload.jks" --ks-key-alias "$ENTEGO_KEY_ALIAS" --ks-pass "pass:$ENTEGO_STORE_PASSWORD" --key-pass "pass:$ENTEGO_KEY_PASSWORD" --out release-out/ENTEGO-Android-v1.0.1-release.apk release-out/ENTEGO-Android-v1.0.1-release-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs release-out/ENTEGO-Android-v1.0.1-release.apk > release-out/signing-certificate.txt
           rm -f "$RUNNER_TEMP/entego-upload.jks"
 
       - name: Record release metadata
@@ -146,7 +150,7 @@ jobs:
         run: |
           set -euo pipefail
           SIGNING='unsigned-candidate'
-          if [ -f release-out/ENTEGO-Android-v1.0.0-release.aab ]; then SIGNING='signed'; fi
+          if [ -f release-out/ENTEGO-Android-v1.0.1-release.aab ]; then SIGNING='signed'; fi
           {
             echo "ENTEGO Android Release"
             echo "versionName=${ENTEGO_VERSION_NAME}"
@@ -156,13 +160,14 @@ jobs:
             echo "commit=${GITHUB_SHA}"
             echo "signing=${SIGNING}"
             echo "nativeCamera=true"
+            echo "stableKycInput=true"
           } > release-out/build-info.txt
           sha256sum release-out/* > release-out/SHA256SUMS.txt
 
       - name: Upload release candidate
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.0-release
+          name: ENTEGO-Android-v1.0.1-release
           path: release-out/
           if-no-files-found: error
           retention-days: 30
