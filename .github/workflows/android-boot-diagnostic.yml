@@ -79,8 +79,8 @@ jobs:
             const identityModule=await page.evaluate(async()=>{const r=await fetch('/identity-center-flow.js?v=77',{cache:'no-store'});return {status:r.status,text:await r.text()}});
             if(identityModule.status!==200||!identityModule.text.includes("IDENTITY_UI_VERSION='77'")||!identityModule.text.includes('Payout terkunci'))process.exit(6);
             const identityConfig=await page.evaluate(async()=>{const r=await fetch('/api/identity/config',{cache:'no-store'});return {status:r.status,data:await r.json().catch(()=>({}))}});
-            if(identityConfig.status!==200||identityConfig.data?.documentsPublic!==false||identityConfig.data?.payoutGate!=='identity-approved-required')process.exit(7);
-            console.log('ANDROID_IDENTITY_POLICY=PASS');
+            if(identityConfig.status!==200||identityConfig.data?.privateDocumentStorageConfigured!==true||identityConfig.data?.documentsPublic!==false||identityConfig.data?.payoutGate!=='identity-approved-required')process.exit(7);
+            console.log('ANDROID_IDENTITY_PRIVATE_STORAGE=PASS');
 
             const registerTab=page.locator('#authRegisterTab');if(await registerTab.count()!==1)process.exit(8);await registerTab.click();
             const registerBtn=page.locator('#authRegisterBtn');if(await registerBtn.count()!==1)process.exit(9);await registerBtn.click();await page.waitForTimeout(150);
