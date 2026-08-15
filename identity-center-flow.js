@@ -1,4 +1,4 @@
-const IDENTITY_UI_VERSION='77';
+const IDENTITY_UI_VERSION='77.1';
 const icRoute=()=>localStorage.getItem('entego_route')||'home';
 const icUser=()=>{try{return JSON.parse(localStorage.getItem('entego_auth_user')||'null')}catch{return null}};
 const icEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -93,6 +93,9 @@ function icRender(main,payload){
 async function icLoad(){
  const route=icRoute(),user=icUser();if(!['profile','partner','partnerOnboarding'].includes(route)||user?.role!=='partner'||icBusy)return;
  const main=document.querySelector('main.content');if(!main)return;if(route==='profile'&&!document.querySelector('#entegoAuthPanel'))return;
+ // Keep the active form stable. Native KYC controls mutate this card; re-rendering it
+ // on every MutationObserver tick destroys input focus and makes Android typing unusable.
+ if(document.querySelector('#entegoIdentityCenter'))return;
  icBusy=true;try{const x=await icJson('/api/partner/me/identity');if(!x.r.ok||!x.d.ok)throw new Error(x.d.error||'identity_load_failed');icRender(main,x.d)}catch(e){let box=document.querySelector('#entegoIdentityCenter');if(!box){box=document.createElement('section');box.id='entegoIdentityCenter';box.className='card';main.appendChild(box)}box.innerHTML=`<div class="kicker">ENTEGO IDENTITY & PAYOUT</div><h2>Verifikasi Identitas</h2><span class="pill blue">Belum dapat dimuat</span><p class="meta">${icEsc(icError(e.message))}</p>`;icPlacement(main,box)}finally{icBusy=false}
 }
 
