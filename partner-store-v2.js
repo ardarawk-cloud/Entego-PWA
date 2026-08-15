@@ -1,5 +1,8 @@
 import {EntegoPartner as BasePartner} from './partner-store.js';
 const clean=(v,max=300)=>String(v??'').trim().slice(0,max);
+const ID_TYPES=new Set(['KTP','SIM','PASSPORT']);
+const normalizeIdType=v=>{const t=(clean(v,20)||'KTP').toUpperCase();if(!ID_TYPES.has(t))throw new Error('INVALID_IDENTITY_TYPE');return t};
+const onlyIdSuffix=(v,type='KTP')=>{const raw=String(v??'').toUpperCase();const s=type==='PASSPORT'?raw.replace(/[^A-Z0-9]/g,''):raw.replace(/\D/g,'');return s.length===4?s:''};
 const onlyLast4=v=>{const s=String(v??'').replace(/\D/g,'');return s.length===4?s:''};
 const safeDetail=v=>clean(v,500);
 
@@ -82,7 +85,7 @@ export class EntegoPartner extends BasePartner{
  }
 
  async getIdentityDocumentRef(userId,kind){
-  const uid=clean(userId,100),column=kind==='ktp'?'ktp':kind==='selfie'?'selfie':'';
+  const uid=clean(userId,100),column=(kind==='ktp'||kind==='identity')?'ktp':kind==='selfie'?'selfie':'';
   if(!column)return null;
   const r=this.sql.exec(`SELECT ${column}_key AS object_key,${column}_content_type AS content_type,${column}_size AS size FROM identity_verifications WHERE user_id=? LIMIT 1`,uid).toArray()[0];
   return r?.object_key?{key:r.object_key,contentType:r.content_type||'application/octet-stream',size:Number(r.size)||0}:null;
@@ -90,45 +93,46 @@ export class EntegoPartner extends BasePartner{
 
  async saveIdentity(userId,input={}){
   const uid=clean(userId,100);if(!uid)throw new Error('IDENTITY_USER_REQUIRED');
-  if(clean(input.nik||input.idNumber,40))throw new Error('FULL_ID_NUMBER_NOT_ACCEPTED');
+  if(clean(input.nik||input.idNumber||input.simNumber||input.passportNumber,80))throw new Error('FULL_ID_NUMBER_NOT_ACCEPTED');
   if(clean(input.bankAccountNumber,80))throw new Error('FULL_BANK_NUMBER_NOT_ACCEPTED');
   const now=new Date().toISOString(),existing=await this.getIdentity(uid),raw=this.sql.exec(`SELECT * FROM identity_verifications WHERE user_id=? LIMIT 1`,uid).toArray()[0];
+  const idType=normalizeIdType(input.idType||existing?.idType||'KTP');
   const next={
-   legalName:clean(input.legalName,160),phone:clean(input.phone,40),idType:'KTP',idLast4:onlyLast4(input.idLast4),
+   legalName:clean(input.legalName,160),phone:clean(input.phone,40),idType,idLast4:onlyIdSuffix(input.idLast4,idType),
    bankName:clean(input.bankName,100),bankAccountName:clean(input.bankAccountName,160),bankAccountLast4:onlyLast4(input.bankAccountLast4)
   };
-  const changed=Boolean(existing)&&['legalName','phone','idLast4','bankName','bankAccountName','bankAccountLast4'].some(k=>String(existing[k]||'')!==String(next[k]||''));
+  const changed=Boolean(existing)&&['legalName','phone','idType','idLast4','bankName','bankAccountName','bankAccountLast4'].some(k=>String(existing[k]||'')!==String(next[k]||''));
   const previousStatus=existing?.identityStatus||'draft';
   const nextStatus=(changed&&['submitted','approved','rejected'].includes(previousStatus))?'draft':previousStatus;
   const consentAt=input.consent===true?(raw?.consent_at||now):(raw?.consent_at||'');
   const payoutEnabled=nextStatus==='approved'&&!changed?1:0;
   if(!raw){
-   this.sql.exec(`INSERT INTO identity_verifications(user_id,legal_name,phone,id_type,id_last4,bank_name,bank_account_name,bank_account_last4,identity_status,payout_enabled,consent_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,uid,next.legalName,next.phone,'KTP',next.idLast4,next.bankName,next.bankAccountName,next.bankAccountLast4,nextStatus,payoutEnabled,consentAt,now,now);
+   this.sql.exec(`INSERT INTO identity_verifications(user_id,legal_name,phone,id_type,id_last4,bank_name,bank_account_name,bank_account_last4,identity_status,payout_enabled,consent_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,uid,next.legalName,next.phone,next.idType,next.idLast4,next.bankName,next.bankAccountName,next.bankAccountLast4,nextStatus,payoutEnabled,consentAt,now,now);
   }else{
-   this.sql.exec(`UPDATE identity_verifications SET legal_name=?,phone=?,id_type='KTP',id_last4=?,bank_name=?,bank_account_name=?,bank_account_last4=?,identity_status=?,payout_enabled=?,consent_at=?,submitted_at=CASE WHEN ?='draft' THEN '' ELSE submitted_at END,reviewed_at=CASE WHEN ?='draft' THEN '' ELSE reviewed_at END,reviewer_id=CASE WHEN ?='draft' THEN '' ELSE reviewer_id END,updated_at=? WHERE user_id=?`,next.legalName,next.phone,next.idLast4,next.bankName,next.bankAccountName,next.bankAccountLast4,nextStatus,payoutEnabled,consentAt,nextStatus,nextStatus,nextStatus,now,uid);
+   this.sql.exec(`UPDATE identity_verifications SET legal_name=?,phone=?,id_type=?,id_last4=?,bank_name=?,bank_account_name=?,bank_account_last4=?,identity_status=?,payout_enabled=?,consent_at=?,submitted_at=CASE WHEN ?='draft' THEN '' ELSE submitted_at END,reviewed_at=CASE WHEN ?='draft' THEN '' ELSE reviewed_at END,reviewer_id=CASE WHEN ?='draft' THEN '' ELSE reviewer_id END,updated_at=? WHERE user_id=?`,next.legalName,next.phone,next.idType,next.idLast4,next.bankName,next.bankAccountName,next.bankAccountLast4,nextStatus,payoutEnabled,consentAt,nextStatus,nextStatus,nextStatus,now,uid);
   }
-  await this.logIdentityEvent(uid,'identity_details_saved',uid,changed?'Sensitive identity metadata changed; approval reset if needed.':'Identity metadata saved.');
+  await this.logIdentityEvent(uid,'identity_details_saved',uid,changed?`${next.idType} identity metadata changed; approval reset if needed.`:`${next.idType} identity metadata saved.`);
   return this.getIdentity(uid);
  }
 
  async setIdentityDocument(userId,kind,document={}){
   const uid=clean(userId,100);if(!uid)throw new Error('IDENTITY_USER_REQUIRED');
-  const column=kind==='ktp'?'ktp':kind==='selfie'?'selfie':'';if(!column)throw new Error('INVALID_IDENTITY_DOCUMENT_KIND');
+  const column=(kind==='ktp'||kind==='identity')?'ktp':kind==='selfie'?'selfie':'';if(!column)throw new Error('INVALID_IDENTITY_DOCUMENT_KIND');
   let existing=await this.getIdentity(uid),now=new Date().toISOString();
   if(!existing){this.sql.exec(`INSERT INTO identity_verifications(user_id,created_at,updated_at) VALUES(?,?,?)`,uid,now,now);existing=await this.getIdentity(uid)}
   const key=clean(document.key,800),contentType=clean(document.contentType,100),size=Math.max(0,Math.round(Number(document.size)||0));if(!key)throw new Error('IDENTITY_DOCUMENT_REQUIRED');
   this.sql.exec(`UPDATE identity_verifications SET ${column}_key=?,${column}_content_type=?,${column}_size=?,identity_status='draft',payout_enabled=0,submitted_at='',reviewed_at='',reviewer_id='',updated_at=? WHERE user_id=?`,key,contentType,size,now,uid);
-  await this.logIdentityEvent(uid,`${column}_document_uploaded`,uid,`Private ${column} document replaced.`);
+  await this.logIdentityEvent(uid,`${column}_document_uploaded`,uid,`Private ${column==='ktp'?'identity':'selfie'} document replaced.`);
   return this.getIdentity(uid);
  }
 
  async submitIdentity(userId){
   const uid=clean(userId,100),row=this.sql.exec(`SELECT * FROM identity_verifications WHERE user_id=? LIMIT 1`,uid).toArray()[0];if(!row)throw new Error('IDENTITY_DETAILS_REQUIRED');
-  if(!row.legal_name||!row.phone||row.id_last4.length!==4||!row.bank_name||!row.bank_account_name||row.bank_account_last4.length!==4)throw new Error('IDENTITY_DETAILS_REQUIRED');
+  if(!ID_TYPES.has(String(row.id_type||'KTP').toUpperCase())||!row.legal_name||!row.phone||String(row.id_last4||'').length!==4||!row.bank_name||!row.bank_account_name||row.bank_account_last4.length!==4)throw new Error('IDENTITY_DETAILS_REQUIRED');
   if(!row.consent_at)throw new Error('IDENTITY_CONSENT_REQUIRED');
   if(!row.ktp_key||!row.selfie_key)throw new Error('IDENTITY_DOCUMENTS_REQUIRED');
   const now=new Date().toISOString();this.sql.exec(`UPDATE identity_verifications SET identity_status='submitted',payout_enabled=0,submitted_at=?,reviewed_at='',reviewer_id='',review_note='',updated_at=? WHERE user_id=?`,now,now,uid);
-  await this.logIdentityEvent(uid,'identity_submitted',uid,'Identity package submitted for admin review.');
+  await this.logIdentityEvent(uid,'identity_submitted',uid,`${String(row.id_type||'KTP').toUpperCase()} identity package submitted for admin review.`);
   return this.getIdentity(uid);
  }
 
