@@ -20,12 +20,8 @@ function entegoCoreCatalogPlugin(){
         replacements++;
         if(replacements>4) throw new Error(`ENTEGO unexpected duplicate services renderers: ${id}`);
       }
-      if(replacements===0 && !next.includes('ENTEGO PROFESSIONAL PARTNER')){
-        throw new Error(`ENTEGO main entry was not upgraded to Event Ecosystem: ${id}`);
-      }
-      if(!next.includes('globalThis.ENTEGO_CORE_CATALOG_VERSION')){
-        next=next.replace('import "./styles.css";','import "./styles.css";\nglobalThis.ENTEGO_CORE_CATALOG_VERSION="2.2";');
-      }
+      if(replacements===0 && !next.includes('ENTEGO PROFESSIONAL PARTNER')) throw new Error(`ENTEGO main entry was not upgraded to Event Ecosystem: ${id}`);
+      if(!next.includes('globalThis.ENTEGO_CORE_CATALOG_VERSION')) next=next.replace('import "./styles.css";','import "./styles.css";\nglobalThis.ENTEGO_CORE_CATALOG_VERSION="2.2";');
       next=next.replaceAll('price:900000','price:1000000');
       next=next.replaceAll('Cari DJ, sound, mobil, MC...','Cari DJ, EO, WO, venue, sound...');
       next=next.replaceAll('ENTEGO • Entertainment & Rental Marketplace','ENTEGO • Event Ecosystem Platform');
@@ -49,9 +45,9 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]'
+        entryFileNames: 'assets/[name]-v85.js',
+        chunkFileNames: 'assets/[name]-v85.js',
+        assetFileNames: 'assets/[name]-v85[extname]'
       }
     }
   }
