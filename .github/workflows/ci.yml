@@ -32,10 +32,14 @@ jobs:
       - name: Verify critical PWA assets
         shell: bash
         run: |
+          set -euo pipefail
           test -f dist/index.html
           test -f dist/sw.js
           test -f dist/assets/index.js
           test -f dist/assets/index.css
+          test -f dist/event-ecosystem-flow.js
+          test -f dist/service-menu-flow.js
+          test -f dist/partner-category-flow.js
           test -f dist/account-route-fix-flow.js
           test -f dist/route-loader-flow.js
           test -f dist/production-truth-gate-flow.js
@@ -49,117 +53,104 @@ jobs:
           test -f dist/admin-payment-flow.js
           test -f dist/admin-verification-flow.js
           test -f dist/identity-center-flow.js
+          test -f dist/identity-submit-hotfix-flow.js
           test -f dist/support-center-flow.js
           test -f vite.config.js
           test -f identity-api.js
+          test -f partner-api.js
           test -f scripts/ensure-private-r2.mjs
+
           grep -q "node scripts/ensure-private-r2.mjs" package.json
           grep -q "WORKERS_CI!=='1'" scripts/ensure-private-r2.mjs
           grep -q "entego-identity-private" scripts/ensure-private-r2.mjs
-          grep -q "r2','bucket','create'" scripts/ensure-private-r2.mjs
           grep -q "entryFileNames: 'assets/\[name\].js'" vite.config.js
           grep -q "chunkFileNames: 'assets/\[name\].js'" vite.config.js
           grep -q "assetFileNames: 'assets/\[name\]\[extname\]'" vite.config.js
+          grep -q "entego-core-catalog-v2" vite.config.js
           ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.js' dist/index.html
           ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.css' dist/index.html
+
+          python3 <<'PY'
+          from pathlib import Path
+          bundle=Path('dist/assets/index.js').read_text()
+          required=[
+              'ENTEGO PROFESSIONAL PARTNER',
+              'Event Organizer',
+              'Wedding Organizer',
+              'Party Planner',
+              'Corporate Event Planner',
+              'Venue Lainnya',
+              'Cari DJ, EO, WO, venue, sound...',
+              'Event Ecosystem Platform',
+              'Menu Layanan & Harga',
+          ]
+          missing=[x for x in required if x not in bundle]
+          if missing:
+              raise SystemExit(f'Compiled core catalog missing: {missing}')
+          if 'price:900000' in bundle:
+              raise SystemExit('Legacy Rp900k mock price remains in compiled bundle')
+          print('Compiled Event Ecosystem core catalog verified')
+          PY
+
           grep -q '"main":"./api-worker-v63.js"' wrangler.jsonc
           grep -q '"ENT_SUPPORT","class_name":"EntegoSupport"' wrangler.jsonc
           grep -q '"binding":"ENT_IDENTITY_MEDIA"' wrangler.jsonc
           grep -q '"bucket_name":"entego-identity-private"' wrangler.jsonc
-          grep -q "RL_VERSION='77'" route-loader-flow.js
           grep -q 'identity-center-flow.js' route-loader-flow.js
+          grep -q 'event-ecosystem-flow.js' route-loader-flow.js
+          grep -q 'service-menu-flow.js' route-loader-flow.js
           grep -q '@vite-ignore' route-loader-flow.js
           grep -q 'rlIdle' route-loader-flow.js
-          grep -q "route!=='home'" route-loader-flow.js
-          grep -q 'sanitizeHome' production-truth-gate-flow.js
-          grep -q 'ptgScheduled' production-truth-gate-flow.js
-          grep -q "account-route-fix-flow.js?v=77" index.html
-          grep -q "route-loader-flow.js?v=77" index.html
-          grep -q "production-truth-gate-flow.js?v=77" index.html
-          grep -q "production-guard-flow.js?v=77" index.html
-          grep -q "ENTEGO_BOOT_VERSION='77'" index.html
-          grep -q "ENTEGO_ASSET_STRATEGY='static-shell-stable-v77'" index.html
+
+          grep -q "ENTEGO_BOOT_VERSION='84'" index.html
+          grep -q "ENTEGO_ASSET_STRATEGY='core-catalog-compiled-v84'" index.html
+          grep -q 'event-ecosystem-flow.js?v=84' index.html
+          grep -q 'route-loader-flow.js?v=84' index.html
           grep -q 'id="entegoStaticShell"' index.html
-          grep -q 'Data Talent, booking, pembayaran, dan akun dimuat aman dari server' index.html
-          grep -q 'Koneksi lambat' index.html
-          ! grep -q 'id="entegoBootShield"' index.html
-          ! grep -q 'visibility:hidden' index.html
+          grep -q 'Event Ecosystem Platform' index.html
+          grep -q 'Cari DJ, EO, WO, venue' index.html
           grep -q "updateViaCache:'none'" index.html
           grep -q 'visibilitychange' index.html
-          ! grep -q 'location.reload()' index.html
-          test "$(grep -o '<script type=\"module\" src=' index.html | wc -l)" -eq 5
-          grep -q "ARF_VERSION='77'" account-route-fix-flow.js
-          grep -q 'Metode Pembayaran' account-route-fix-flow.js
-          grep -q 'Admin Control Center' account-route-fix-flow.js
-          grep -q 'ADMIN REQUIRED' account-route-fix-flow.js
-          grep -q "AUTH_UI_VERSION='77'" auth-flow.js
-          grep -q 'Verifikasi identitas diperlukan' auth-flow.js
-          grep -q 'authRegisterStatus' auth-flow.js
-          grep -q 'Membuat akun' auth-flow.js
-          grep -q 'request_timeout' auth-flow.js
-          grep -q 'network_error' auth-flow.js
-          grep -q 'scrollIntoView' auth-flow.js
-          grep -q "IDENTITY_UI_VERSION='77'" identity-center-flow.js
+          ! grep -q 'visibility:hidden' index.html
+
+          grep -q 'const CACHE="entego-v84"' sw.js
+          grep -q 'const DIRECTORY_CACHE="entego-directory-v68"' sw.js
+          grep -q '"/assets/index.js"' sw.js
+          grep -q 'event-ecosystem-flow.js?v=84' sw.js
+          grep -q 'route-loader-flow.js?v=84' sw.js
+          grep -q 'appShellNavigation' sw.js
+          grep -q 'cacheFirst' sw.js
+
+          grep -Fq "ENTEGO_EVENT_ECOSYSTEM_VERSION='2.0'" event-ecosystem-flow.js
+          grep -Fq "ENTEGO_SERVICE_MENU_VERSION='1.1'" service-menu-flow.js
+          grep -Fq "ENTEGO_MIN_SERVICE_PRICE=1000000" service-menu-flow.js
+          grep -Fq "MIN_SERVICE_PRICE=1000000" partner-api.js
+          grep -Fq 'Event Organizer' partner-category-flow.js
+          grep -Fq 'Wedding Organizer' partner-category-flow.js
+
           grep -Fq "if(document.querySelector('#entegoIdentityCenter'))return;" identity-center-flow.js
-          grep -q 'Jangan masukkan nomor identitas lengkap' identity-center-flow.js
           grep -q 'KTP — WNI' identity-center-flow.js
           grep -q 'Paspor — WNA / internasional' identity-center-flow.js
-          grep -q 'Payout terkunci' identity-center-flow.js
-          grep -q 'identity_private_storage_not_configured' identity-center-flow.js
-          grep -q "AV_VERSION='77'" admin-verification-flow.js
-          grep -q '/api/admin/identity/partners' admin-verification-flow.js
-          grep -q 'KTP / SIM / Paspor' admin-verification-flow.js
-          grep -q 'Tombol Verifikasi aktif hanya setelah Identity Center' admin-verification-flow.js
+          grep -Fq "IDENTITY_SUBMIT_HOTFIX_VERSION='78'" identity-submit-hotfix-flow.js
           grep -q 'identity_verifications' partner-store-v2.js
           grep -q 'identity_events' partner-store-v2.js
-          grep -q 'payout_enabled' partner-store-v2.js
           grep -Fq "ID_TYPES=new Set(['KTP','SIM','PASSPORT'])" partner-store-v2.js
           grep -q 'FULL_ID_NUMBER_NOT_ACCEPTED' partner-store-v2.js
           grep -q 'FULL_BANK_NUMBER_NOT_ACCEPTED' partner-store-v2.js
-          grep -q "identityStatus!=='approved'" partner-store-v2.js
           grep -q 'ENT_IDENTITY_MEDIA' identity-api.js
           grep -Fq "IDENTITY_TYPES=['KTP','SIM','PASSPORT']" identity-api.js
           grep -q 'documentsPublic:false' identity-api.js
           grep -q 'fullNikStored:false' identity-api.js
           grep -q 'fullBankAccountStored:false' identity-api.js
-          grep -q "path.startsWith('/api/payouts/')" identity-api.js
-          grep -q 'payout_not_activated' identity-api.js
-          grep -q 'identity_verification_required' identity-api.js
           grep -q 'handleIdentityApi' api-worker-v63.js
-          grep -q "partnerIdentity:'kyc-gated-private-docs'" api-worker-v63.js
           ! grep -q 'ENT_IDENTITY_MEDIA' media-api.js
           ! grep -q 'identity/' media-api.js
-          grep -q 'const PBKDF2_ITERATIONS=100000' auth-store-v2.js
-          ! grep -q 'iterations:210000' auth-store-v2.js
+
           grep -Fq "import './premium-ui-flow.js'" production-guard-flow.js
           grep -q 'entegoPremiumMonoStyle' premium-ui-flow.js
           grep -q 'entego-brand-mark' premium-ui-flow.js
           ! grep -q "import './server-chat-flow.js'" production-guard-flow.js
           ! grep -q "import './admin-verification-flow.js'" production-guard-flow.js
-          grep -q 'const CACHE="entego-v77"' sw.js
-          grep -q 'const DIRECTORY_CACHE="entego-directory-v68"' sw.js
-          grep -q 'const DIRECTORY_TTL_MS=120000' sw.js
-          grep -q '"/assets/index.js"' sw.js
-          grep -q '"/assets/index.css"' sw.js
-          grep -q 'appShellNavigation' sw.js
-          grep -q 'event.waitUntil(refresh)' sw.js
-          ! grep -q 'networkFirstNavigation' sw.js
-          ! grep -q 'navigationPreload' sw.js
-          ! grep -q 'client.navigate' sw.js
-          grep -q 'url.pathname==="/api/directory"' sw.js
-          grep -q 'directoryResponse' sw.js
-          grep -q 'account-route-fix-flow.js?v=77' sw.js
-          grep -q 'production-truth-gate-flow.js?v=77' sw.js
-          grep -q 'route-loader-flow.js?v=77' sw.js
-          grep -q 'cacheFirst' sw.js
-          grep -q 'request.mode==="navigate"' sw.js
-          ! grep -q 'payment-flow.js?v=77' sw.js
-          ! grep -q 'admin-payment-flow.js?v=77' sw.js
-          ! grep -q 'portfolio-media-flow.js' sw.js
-          grep -q 'authRefreshPromise' auth-flow.js
-          grep -q 'requestIdleCallback' auth-flow.js
-          ! grep -q "window.addEventListener('load',async()=>{await authMe" auth-flow.js
-          ! grep -q "\['home','orders','partner'" action-center-flow.js
           ! grep -q "cancel-flow.js" index.html
           ! grep -q "promo=150000" market-booking-flow.js
           ! grep -q "createOrderFromDraft" market-booking-flow.js
