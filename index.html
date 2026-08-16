@@ -19,20 +19,20 @@
 <body>
   <div id="app"><div id="entegoStaticShell" class="entego-static-shell">
     <header class="ess-top"><div class="ess-brand"><img src="/logo-header.png?v=87" alt="ENTEGO"><span>ENTEGO</span></div><div class="ess-search">Cari DJ, MUA, EO, WO, venue, sound...</div></header>
-    <main class="ess-main"><section class="ess-card"><h1>Semua kebutuhan event, satu tempat.</h1><p>Talent, production, MUA, creative, catering, organizer, venue, rental, dan event support dalam satu ekosistem.</p><div class="ess-status"><span class="ess-dot"></span><span id="entegoShellStatus">Menyiapkan ENTEGO v1.0.10…</span></div></section><div class="ess-grid"><div class="ess-chip">Talent</div><div class="ess-chip">Production</div><div class="ess-chip">Photo & Creative</div><div class="ess-chip">Beauty & Styling</div><div class="ess-chip">Food & Hospitality</div><div class="ess-chip">Organizer</div><div class="ess-chip">Venue</div><div class="ess-chip">Rental & Transport</div><div class="ess-chip">Event Support</div></div></main>
+    <main class="ess-main"><section class="ess-card"><h1>Semua kebutuhan event, satu tempat.</h1><p>Talent, production, MUA, creative, catering, organizer, venue, rental, dan event support dalam satu ekosistem.</p><div class="ess-status"><span class="ess-dot"></span><span id="entegoShellStatus">Menyiapkan ENTEGO v1.0.11…</span></div></section><div class="ess-grid"><div class="ess-chip">Talent</div><div class="ess-chip">Production</div><div class="ess-chip">Photo & Creative</div><div class="ess-chip">Beauty & Styling</div><div class="ess-chip">Food & Hospitality</div><div class="ess-chip">Organizer</div><div class="ess-chip">Venue</div><div class="ess-chip">Rental & Transport</div><div class="ess-chip">Event Support</div></div></main>
     <nav class="ess-bottom"><div class="ess-nav">Home</div><div class="ess-nav">Cari</div><div class="ess-nav">Order</div><div class="ess-nav">Favorit</div><div class="ess-nav">Akun</div></nav>
   </div></div>
   <script>
     (()=>{
-      const ENTEGO_BOOT_VERSION='88';
-      const ENTEGO_ASSET_STRATEGY='home-v87-kyc-hotfix-v88';
+      const ENTEGO_BOOT_VERSION='89';
+      const ENTEGO_ASSET_STRATEGY='home-v87-auth-ui-hotfix-v89';
       const ENTEGO_LOGO_LOCK='/logo-header.png?v=87';
       window.ENTEGO_LOGO_LOCK=ENTEGO_LOGO_LOCK;
       const status=()=>document.getElementById('entegoShellStatus');
       setTimeout(()=>{const s=status();if(s&&document.getElementById('entegoStaticShell'))s.textContent='Koneksi lambat — tampilan tetap tersedia, fitur sedang dimuat…'},3000);
       window.addEventListener('error',e=>{if((e.target?.tagName==='SCRIPT'||e.target?.tagName==='LINK')&&status())status().textContent='Modul belum termuat. ENTEGO akan mencoba lagi saat koneksi tersedia.'},true);
       window.addEventListener('unhandledrejection',()=>{if(status())status().textContent='Sebagian fitur belum termuat. Tampilan utama tetap aman.'});
-      if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=88',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})})}).catch(()=>{})}
+      if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=89',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})})}).catch(()=>{})}
     })();
   </script>
   <script type="module" src="/main.js?v=87"></script>
@@ -40,5 +40,6 @@
   <script type="module" src="/account-route-fix-flow.js?v=87"></script>
   <script type="module" src="/production-truth-gate-flow.js?v=87"></script>
   <script type="module" src="/production-guard-flow.js?v=87"></script>
-  <script type="module" src="/route-loader-flow.js?v=88"></script>
+  <script type="module" src="/logout-hotfix-flow.js?v=89"></script>
+  <script type="module" src="/route-loader-flow.js?v=89"></script>
 </body></html>
