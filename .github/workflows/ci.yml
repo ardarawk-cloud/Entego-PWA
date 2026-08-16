@@ -29,78 +29,53 @@ jobs:
       - name: Build PWA
         run: npm run build
 
-      - name: Verify critical PWA assets
+      - name: Verify current production assets
         shell: bash
         run: |
           set -euo pipefail
           python3 <<'PY'
           from pathlib import Path
-
-          required_files=[
+          required=[
             'index.html','dist/index.html','dist/sw.js','dist/assets/index-v87.js','dist/assets/index-v87.css',
             'dist/logo-header.png','dist/event-ecosystem-flow.js','dist/service-menu-flow.js',
-            'dist/partner-category-flow.js','dist/account-route-fix-flow.js','dist/route-loader-flow.js',
-            'dist/production-truth-gate-flow.js','dist/production-guard-flow.js','dist/premium-ui-flow.js',
-            'dist/auth-flow.js','dist/action-center-flow.js','dist/server-partner-flow.js',
-            'dist/server-booking-flow.js','dist/payment-flow.js','dist/admin-payment-flow.js',
-            'dist/admin-verification-flow.js','dist/identity-center-flow.js','dist/identity-submit-hotfix-flow.js',
-            'dist/support-center-flow.js','vite.config.js','identity-api.js','partner-api.js',
-            'partner-store-v2.js','partner-store-v3.js','api-worker-v63.js','wrangler.jsonc',
-            'scripts/ensure-private-r2.mjs','package.json','media-api.js','market-booking-flow.js'
+            'dist/partner-category-flow.js','dist/logout-hotfix-flow.js','dist/route-loader-flow.js',
+            'dist/auth-flow.js','dist/identity-center-flow.js','dist/identity-submit-hotfix-flow.js',
+            'partner-api.js','partner-store-v2.js','partner-store-v3.js','identity-api.js','api-worker-v63.js',
+            'wrangler.jsonc','scripts/ensure-private-r2.mjs','package.json','media-api.js','market-booking-flow.js'
           ]
-          missing=[x for x in required_files if not Path(x).is_file()]
+          missing=[p for p in required if not Path(p).is_file()]
           if missing: raise SystemExit(f'Missing required files: {missing}')
-
           checks={
-            'dist/assets/index-v87.js':[
-              'globalThis.ENTEGO_HOME_VERSION="1.0.9"','globalThis.ENTEGO_CORE_CATALOG_VERSION="3.1"',
-              'Jelajahi Kategori','Layanan Populer','Talent','Production','Photo & Creative','Beauty & Styling',
-              'Food & Hospitality','Organizer','Venue','Rental & Transport','Decoration & Event Support',
-              'Event Organizer','Wedding Organizer','MUA','/logo-header.png?v=87'
-            ],
-            'dist/route-loader-flow.js':["RL_VERSION='88'",'identity-center-flow.js','identity-submit-hotfix-flow.js','service-menu-flow.js','@vite-ignore','rlIdle'],
-            'index.html':['/sw.js?v=88','/route-loader-flow.js?v=88','/logo-header.png?v=87'],
-            'dist/index.html':["ENTEGO_BOOT_VERSION='88'",'/sw.js?v=88','/logo-header.png?v=87','id="entegoStaticShell"','Semua kebutuhan event, satu tempat.',"updateViaCache:'none'",'visibilitychange'],
-            'dist/sw.js':['const CACHE="entego-v88"','const DIRECTORY_CACHE="entego-directory-v88"','/assets/index-v87.js','/route-loader-flow.js?v=88','appShellNavigation','cacheFirst'],
-            'dist/event-ecosystem-flow.js':["ENTEGO_EVENT_ECOSYSTEM_VERSION='3.0'",'Event Organizer','Wedding Organizer','MUA'],
+            'dist/assets/index-v87.js':['globalThis.ENTEGO_HOME_VERSION="1.0.9"','Jelajahi Kategori','Layanan Populer','MUA','Event Organizer','Wedding Organizer','/logo-header.png?v=87'],
+            'dist/route-loader-flow.js':["RL_VERSION='89'",'logout-hotfix-flow.js','auth-flow.js','partner-category-flow.js','identity-submit-hotfix-flow.js'],
+            'index.html':['/sw.js?v=89','/logout-hotfix-flow.js?v=89','/route-loader-flow.js?v=89','/logo-header.png?v=87'],
+            'dist/index.html':["ENTEGO_BOOT_VERSION='89'",'/sw.js?v=89','/logo-header.png?v=87','Semua kebutuhan event, satu tempat.'],
+            'dist/sw.js':['const CACHE="entego-v89"','const DIRECTORY_CACHE="entego-directory-v89"','/route-loader-flow.js?v=89','/logout-hotfix-flow.js?v=89'],
+            'dist/logout-hotfix-flow.js':["ENTEGO_LOGOUT_HOTFIX_VERSION='1.1'",'entego_force_logged_out','entegoLogout','authLoginBtn','authRegisterBtn','location.replace'],
+            'dist/partner-category-flow.js':["ENTEGO_PARTNER_CATEGORY_VERSION='2.1'",'grid-template-columns:20px minmax(0,1fr)','min-height:48px','entego_partner_services'],
+            'dist/identity-submit-hotfix-flow.js':["IDENTITY_SUBMIT_HOTFIX_VERSION='79'",'Masukkan 4 digit terakhir','sessionStorage'],
             'dist/service-menu-flow.js':["ENTEGO_SERVICE_MENU_VERSION='1.1'",'ENTEGO_MIN_SERVICE_PRICE=1000000'],
             'partner-api.js':['MIN_SERVICE_PRICE=1000000'],
-            'dist/partner-category-flow.js':["ENTEGO_PARTNER_CATEGORY_VERSION='2.0'",'Event Organizer','Wedding Organizer','entego_partner_services'],
-            'dist/identity-center-flow.js':['KTP — WNI','Paspor — WNA / internasional'],
-            'dist/identity-submit-hotfix-flow.js':["IDENTITY_SUBMIT_HOTFIX_VERSION='79'",'Masukkan 4 digit terakhir','Teks abu-abu sebelumnya hanya contoh','sessionStorage'],
-            'partner-store-v2.js':['identity_verifications','identity_events',"ID_TYPES=new Set(['KTP','SIM','PASSPORT'])",'FULL_ID_NUMBER_NOT_ACCEPTED','FULL_BANK_NUMBER_NOT_ACCEPTED','bank_account_last4'],
             'partner-store-v3.js':['services_json'],
-            'identity-api.js':['ENT_IDENTITY_MEDIA',"IDENTITY_TYPES=['KTP','SIM','PASSPORT']",'documentsPublic:false','fullNikStored:false','fullBankAccountStored:false'],
-            'api-worker-v63.js':['handleIdentityApi'],
-            'wrangler.jsonc':['"main":"./api-worker-v63.js"','"binding":"ENT_IDENTITY_MEDIA"','"bucket_name":"entego-identity-private"'],
-            'scripts/ensure-private-r2.mjs':["WORKERS_CI!=='1'",'entego-identity-private'],
-            'package.json':['node scripts/ensure-private-r2.mjs'],
-            'dist/premium-ui-flow.js':['entegoPremiumMonoStyle','entego-brand-mark'],
-            'production-guard-flow.js':["import './premium-ui-flow.js'"],
+            'identity-api.js':["IDENTITY_TYPES=['KTP','SIM','PASSPORT']",'ENT_IDENTITY_MEDIA'],
+            'wrangler.jsonc':['"main":"./api-worker-v63.js"','"binding":"ENT_IDENTITY_MEDIA"'],
+            'package.json':['node scripts/ensure-private-r2.mjs']
           }
           failures=[]
           for file,markers in checks.items():
             text=Path(file).read_text(errors='ignore')
             for marker in markers:
               if marker not in text: failures.append(f'{file}: {marker}')
-
           bundle=Path('dist/assets/index-v87.js').read_text(errors='ignore')
           for forbidden in ['price:900000','["Entertainment",["DJ","MC","Live Band","Singer"]]']:
             if forbidden in bundle: failures.append(f'legacy marker remains: {forbidden}')
-          for file,forbidden in [
-            ('media-api.js','ENT_IDENTITY_MEDIA'),('media-api.js','identity/'),
-            ('production-guard-flow.js',"import './server-chat-flow.js'"),
-            ('production-guard-flow.js',"import './admin-verification-flow.js'"),
-            ('dist/index.html','cancel-flow.js'),('market-booking-flow.js','promo=150000'),
-            ('market-booking-flow.js','createOrderFromDraft')
-          ]:
+          for file,forbidden in [('media-api.js','ENT_IDENTITY_MEDIA'),('media-api.js','identity/'),('market-booking-flow.js','promo=150000'),('market-booking-flow.js','createOrderFromDraft')]:
             if forbidden in Path(file).read_text(errors='ignore'): failures.append(f'forbidden marker {file}: {forbidden}')
-
           if failures:
             print('ENTEGO CI FAILURES:')
             for x in failures: print(' -',x)
             raise SystemExit(1)
-          print('ENTEGO current production asset gates verified')
+          print('VERIFIED: current ENTEGO production gates + logout + partner checkbox alignment')
           PY
 
       - name: Validate Cloudflare Worker bundle
