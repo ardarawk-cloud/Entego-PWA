@@ -73,13 +73,17 @@ jobs:
           bundle=Path('dist/assets/index.js').read_text()
           required=[
               'ENTEGO PROFESSIONAL PARTNER',
+              'Talent',
+              'Production',
+              'Services',
+              'Organizer',
               'Event Organizer',
               'Wedding Organizer',
+              'Party Planner',
               'Corporate Event Planner',
+              'Venue',
               'Venue Lainnya',
-              'Cari DJ, EO, WO, venue, sound...',
               'Event Ecosystem Platform',
-              'Menu Layanan & Harga',
           ]
           missing=[x for x in required if x not in bundle]
           if missing:
@@ -100,6 +104,7 @@ jobs:
           grep -Fq "Event Organizer" dist/partner-category-flow.js
           grep -Fq "Wedding Organizer" dist/partner-category-flow.js
           grep -Fq "Event Ecosystem Platform" dist/index.html
+          grep -Fq 'Cari DJ, EO, WO, venue' dist/index.html
           grep -Fq 'KTP — WNI' dist/identity-center-flow.js
           grep -Fq 'Paspor — WNA / internasional' dist/identity-center-flow.js
           grep -Fq "IDENTITY_SUBMIT_HOTFIX_VERSION='78'" dist/identity-submit-hotfix-flow.js
