@@ -1,18 +1,95 @@
 # ENTEGO CURRENT STATE
 
-Checkpoint version: 2026-08-16
+Checkpoint version: 2026-08-16 / Foundation v2.0
 Owner: Arda
 Startup command: `KAI ENTEGO START`
 
 ## Current Phase
-ENTEGO is in Play Store maturity preparation. Stable Android baseline exists; next objective is v1.1.0 Play Production Candidate.
+ENTEGO is in **Phase 1 Marketplace / Enabler** plus Play Store maturity preparation. Stable Android baseline exists; next Android objective remains v1.1.0 Play Production Candidate.
 
-## Product
-- ENTEGO = Indonesian entertainment talent + event rental marketplace.
-- Initial market/use context: Bali / Indonesia.
-- Examples: DJ, MC, sound system, event rental, vehicle/event-related services.
-- Main tabs: Home, Cari, Order, Favorit, Akun.
-- Trust direction: Verified Partner, ENTEGO Protection, Secure Booking.
+## Product / Business Foundation
+Official business foundation: `ENTEGO-BUSINESS-FOUNDATION.md`.
+
+ENTEGO is no longer defined narrowly as a DJ/talent booking app. Long-term identity is:
+
+**ENTEGO — Event Ecosystem Platform**
+
+Strategic narrative:
+> ENTEGO is building the commerce and operating platform for Indonesia's event economy.
+
+Initial market/use context: Bali / Indonesia.
+
+### Customer can ultimately access
+- DJ / MC / Band / Dancer / live performer
+- sound / lighting / stage / LED / decoration
+- photography / videography / makeup / catering / transport
+- Event Organizer
+- Wedding Organizer
+- party/corporate planners
+- venue
+- other event support vendors
+- future multi-vendor event packages
+- future ENTEGO Managed Events
+
+Main current app tabs remain: Home, Cari, Order, Favorit, Akun.
+Trust direction remains: Verified Partner, ENTEGO Protection, Secure Booking.
+
+## ENTEGO Professional Partner Taxonomy — LOCKED FOUNDATION
+1. **Talent** — DJ, MC, Band, Dancer, Performer, related talent.
+2. **Production** — Sound, Lighting, Stage, LED, Decoration, production support.
+3. **Services** — Photo, Video, Makeup, Catering, Transport, supporting services.
+4. **Organizer** — EO, WO, Party Planner, Corporate Event Planner.
+5. **Venue** — Club, Villa, Hotel, Ballroom, Beach Venue, other venues.
+
+EO and WO are official ENTEGO partner categories from Phase 1. They are **partners first, not default competitors**.
+
+## Business Phase Model
+### PHASE 1 — Marketplace / Enabler — CURRENT
+Commercial direction:
+`Customer → ENTEGO → Professional Partner`
+
+Customer books individual talent, vendors, organizers, or venues.
+Revenue direction:
+- commission
+- platform / transaction fee where appropriate
+
+Guardrail:
+- ENTEGO must not position itself as replacing EO/WO in this phase.
+- Partner/customer data must not be used to unfairly bypass organizer relationships.
+
+### PHASE 2 — Booking + Package Builder — FUTURE
+Core concept: **Build Event Package**.
+
+A lead organizer/partner may combine venue, entertainment, photo/video, decoration, production, transport, etc. into one customer-facing package and price.
+
+Architecture should preserve future support for:
+- package owner / lead organizer
+- package components
+- multi-vendor references
+- availability
+- combined package price
+- package booking lifecycle
+- revenue allocation
+
+Do not activate before Phase 1 core marketplace operations are stable enough.
+
+### PHASE 3 — ENTEGO Managed Events — FUTURE / ARDA APPROVAL REQUIRED
+Customer can give ENTEGO a whole-event brief/budget instead of selecting vendors one by one.
+
+Commercial direction:
+`Customer → ENTEGO as Project Lead → ENTEGO Ecosystem Partners`
+
+Potential revenue direction:
+- management fee
+- vendor margin
+- applicable platform fee
+
+Guardrail:
+- only for customers explicitly requesting ENTEGO full-project management or ENTEGO-owned events
+- must not systematically disintermediate/poach EO/WO partner customers
+- activation requires explicit Arda decision
+
+Possible later demand-creation brands: ENTEGO Sessions, ENTEGO Festival, ENTEGO Wedding Showcase, ENTEGO Creator Events.
 
 ## Repository / Runtime
 - Repo: `ardarawk-cloud/Entego-PWA`
@@ -82,15 +159,27 @@ P2 Store package:
 - Support email, privacy URL, account deletion URL.
 - Content rating, target audience, ads declarations.
 
+## Legal / KBLI State
+- KBLI 2025 is the current official BPS classification framework and replaces KBLI 2020.
+- Old KBLI 2020 `82302 Jasa Penyelenggara Event Khusus (Special Event)` must not be automatically reused for a future ENTEGO entity.
+- No specific ENTEGO KBLI code is locked yet.
+- Candidate codes mentioned informally, including `90391` and `9690`, remain **UNVERIFIED FOR ENTEGO** until mapped to ENTEGO's final legal activities using official BPS/OSS definitions in force at incorporation/licensing time.
+- Final legal activity mapping must distinguish marketplace/platform activities from organizer/managed-event/owned-event and other operating activities.
+
 ## Current Release Gate
 Do not label a build `Play Production Candidate` until all P0 items are complete, critical flows pass on real Android devices, the AAB is signed with the protected ENTEGO upload key, applicationId remains unchanged, and versionCode is higher than the prior release.
 
 ## Last Safe Point
-- Stable Android v1.0.4 exists and is the updateable baseline.
-- Play upload AAB v1.0.4 exists as a valid upload artifact, but should not be treated as the final mature Play release candidate.
-- Play Console registration process has been reviewed; developer registration requires payment before full console access.
-- Decision: mature ENTEGO further before public Play release.
-- Next implementation phase: Privacy Policy + Account Deletion + Data Safety readiness, followed by end-to-end QA and store assets.
+- Business Foundation v2.0 locked: ENTEGO = Event Ecosystem Platform.
+- EO + WO added to the official Phase 1 Professional Partner foundation.
+- Professional Partner top-level taxonomy locked: Talent / Production / Services / Organizer / Venue.
+- Phase 1 Marketplace / Enabler is current.
+- Phase 2 Package Builder is future.
+- Phase 3 Managed Events is future and requires explicit Arda approval.
+- Stable Android v1.0.4 remains the updateable baseline.
+- Play upload AAB v1.0.4 exists as a valid upload artifact, but is not the final mature Play release candidate.
+- Decision remains: mature ENTEGO further before public Play release.
+- Next implementation phase remains Privacy Policy + Account Deletion + Data Safety readiness, while preserving the new partner taxonomy in future product changes.
 
 ## Continuity Instruction
 After every material ENTEGO change, update this file so `KAI ENTEGO START` can resume from the latest safe point after a new chat or interruption.
