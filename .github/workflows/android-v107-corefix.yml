@@ -1,0 +1,155 @@
+name: ENTEGO v1.0.7 CORE CATALOG FIX
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-corefix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      ENTEGO_VERSION_NAME: '1.0.7'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve update-safe versionCode
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ENTEGO_VERSION_CODE=$((110000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build PWA
+        run: npm run build
+
+      - name: Hard verify Event Ecosystem core
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          test -f dist/assets/index-v85.js
+          test -f dist/assets/index-v85.css
+          test -f dist/sw.js
+          python3 <<'PY'
+          from pathlib import Path
+          bundle=Path('dist/assets/index-v85.js').read_text()
+          required=[
+            'ENTEGO PROFESSIONAL PARTNER',
+            'Talent','Production','Services','Organizer','Venue',
+            'Event Organizer','Wedding Organizer','Party Planner','Corporate Event Planner',
+            'Venue Lainnya','Event Ecosystem Platform'
+          ]
+          missing=[x for x in required if x not in bundle]
+          if missing:
+            raise SystemExit(f'MISSING CORE CATALOG: {missing}')
+          legacy='["Entertainment",["DJ","MC","Live Band","Singer"]]'
+          if legacy in bundle:
+            raise SystemExit('LEGACY ENTERTAINMENT/CREATIVE/RENTAL RENDERER STILL PRESENT')
+          if 'price:900000' in bundle:
+            raise SystemExit('LEGACY BELOW-FLOOR MOCK PRICE STILL PRESENT')
+          print('VERIFIED CORE: Talent / Production / Services / Organizer / Venue')
+          print('VERIFIED ORGANIZER: Event Organizer / Wedding Organizer')
+          PY
+          grep -Fq 'const CACHE="entego-v85"' dist/sw.js
+          grep -Fq '/assets/index-v85.js' dist/sw.js
+          ! grep -Fq '/main.js?v=85' dist/sw.js
+          grep -Fq "ENTEGO_BOOT_VERSION='85'" dist/index.html
+          grep -Fq 'Event Organizer' dist/event-ecosystem-flow.js
+          grep -Fq 'Wedding Organizer' dist/event-ecosystem-flow.js
+          grep -Fq "ENTEGO_MIN_SERVICE_PRICE=1000000" dist/service-menu-flow.js
+          grep -Fq "MIN_SERVICE_PRICE=1000000" partner-api.js
+          grep -q 'com.ardacore.entego' capacitor.config.json
+
+      - name: Generate Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android
+          npx cap add android
+          npx cap sync android
+          npm run android:assets
+          test -f android/gradlew
+          grep -q 'com.ardacore.entego' android/app/build.gradle
+          grep -q 'targetSdkVersion = 36' android/variables.gradle
+
+      - name: Set Android version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          import os,re
+          p=Path('android/app/build.gradle')
+          s=p.read_text()
+          s=re.sub(r'versionCode\s+\d+', f"versionCode {os.environ['ENTEGO_VERSION_CODE']}", s, count=1)
+          s=re.sub(r'versionName\s+["\'][^"\']+["\']', f"versionName \"{os.environ['ENTEGO_VERSION_NAME']}\"", s, count=1)
+          p.write_text(s)
+          PY
+          grep -q "versionCode ${ENTEGO_VERSION_CODE}" android/app/build.gradle
+          grep -q "versionName \"${ENTEGO_VERSION_NAME}\"" android/app/build.gradle
+
+      - name: Build release APK and AAB
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
+          cd ..
+          test -f android/app/build/outputs/apk/release/app-release-unsigned.apk
+          test -f android/app/build/outputs/bundle/release/app-release.aab
+          mkdir -p corefix-out
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -f -p 4 \
+            android/app/build/outputs/apk/release/app-release-unsigned.apk \
+            corefix-out/ENTEGO-Android-v1.0.7-corefix-aligned-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -p 4 corefix-out/ENTEGO-Android-v1.0.7-corefix-aligned-unsigned.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab corefix-out/ENTEGO-Android-v1.0.7-corefix-unsigned.aab
+          cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" corefix-out/apksigner.jar
+          {
+            echo "versionName=${ENTEGO_VERSION_NAME}"
+            echo "versionCode=${ENTEGO_VERSION_CODE}"
+            echo "applicationId=com.ardacore.entego"
+            echo "coreCatalog=2.2"
+            echo "assetGeneration=v85"
+            echo "minimumServicePrice=1000000"
+            echo "signing=unsigned-needs-protected-key"
+            echo "commit=${GITHUB_SHA}"
+          } > corefix-out/build-info.txt
+          sha256sum corefix-out/ENTEGO-Android-v1.0.7-corefix-aligned-unsigned.apk corefix-out/ENTEGO-Android-v1.0.7-corefix-unsigned.aab > corefix-out/SHA256SUMS.txt
+
+      - name: Upload protected signing candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENTEGO-v1.0.7-CORE-CATALOG-FIX-CANDIDATE
+          path: corefix-out/
+          if-no-files-found: error
+          retention-days: 14
