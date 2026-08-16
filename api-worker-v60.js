@@ -2,7 +2,7 @@ import core from './api-worker-v59.js';
 import {getRequestUser} from './auth-api.js';
 export {EntegoStore,EntegoPayment,EntegoChat,EntegoOps,EntegoPresence,EntegoAlerts} from './api-worker-v59.js';
 export {EntegoAuth} from './auth-store-v3.js';
-export {EntegoPartner} from './partner-store-v2.js';
+export {EntegoPartner} from './partner-store-v3.js';
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'}});
 const authStore=env=>env.ENT_AUTH.getByName('entego-auth-production');
 const partnerStore=env=>env.ENT_PARTNER.getByName('entego-partners-production');
