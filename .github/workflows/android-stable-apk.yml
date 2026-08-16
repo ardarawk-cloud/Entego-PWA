@@ -63,7 +63,7 @@ jobs:
           from pathlib import Path
 
           required_files = [
-              'dist/index.html','dist/assets/index-v87.js','dist/assets/index-v87.css','dist/logo-header.png',
+              'index.html','dist/index.html','dist/assets/index-v87.js','dist/assets/index-v87.css','dist/logo-header.png',
               'dist/event-ecosystem-flow.js','dist/service-menu-flow.js','dist/partner-category-flow.js',
               'dist/partner-marketing-flow.js','dist/route-loader-flow.js','dist/identity-center-flow.js',
               'dist/identity-submit-hotfix-flow.js','dist/native-runtime-flow.js','dist/native-identity-camera-flow.js',
@@ -90,7 +90,8 @@ jobs:
               'partner-store-v3.js': ['services_json'],
               'api-worker-v60.js': ['partner-store-v3.js'],
               'dist/route-loader-flow.js': ["RL_VERSION='88'",'identity-submit-hotfix-flow.js','partner-marketing-flow.js'],
-              'dist/index.html': ["ENTEGO_BOOT_VERSION='88'",'/logo-header.png?v=87','/sw.js?v=88','/route-loader-flow.js?v=88','Semua kebutuhan event, satu tempat.'],
+              'index.html': ['/route-loader-flow.js?v=88','/sw.js?v=88','/logo-header.png?v=87'],
+              'dist/index.html': ["ENTEGO_BOOT_VERSION='88'",'/logo-header.png?v=87','/sw.js?v=88','Semua kebutuhan event, satu tempat.'],
               'dist/sw.js': ['entego-v88','/assets/index-v87.js','/logo-header.png?v=87','/route-loader-flow.js?v=88'],
               'dist/identity-center-flow.js': ['KTP — WNI','Paspor — WNA / internasional'],
               'dist/identity-submit-hotfix-flow.js': [
