@@ -1,13 +1,13 @@
 # ENTEGO CURRENT STATE
 
-Checkpoint version: 2026-08-16 / Foundation v2.0 / Pricing Policy v1.0 / Android v1.0.6
+Checkpoint version: 2026-08-16 / Foundation v2.0 / Pricing Policy v1.0 / Android v1.0.7 Core Catalog Fix
 Owner: Arda
 Startup command: `KAI ENTEGO START`
 
 ## Current Phase
 ENTEGO is in **Phase 1 Marketplace / Enabler** plus Play Store maturity preparation.
 
-Current Android stable test/distribution build: **v1.0.6 Service Menu + Pricing Floor Update**.
+Current verified Android stable test/distribution build: **v1.0.7 Core Catalog Fix**.
 Target after Play-readiness gate completion remains: **v1.1.0 Play Production Candidate**.
 
 ## Product / Business Foundation
@@ -116,17 +116,58 @@ Legal governance:
 - before broad public/contractual rollout, final pricing-floor terms and market impact require Indonesian competition-law review.
 - do not characterize the policy as an agreement among competing partners to coordinate prices.
 
-## Event Ecosystem Foundation Injection — IMPLEMENTED
-Implemented in web/PWA and Android bundle without activating Phase 2/3:
-- `event-ecosystem-flow.js` marker `ENTEGO_EVENT_ECOSYSTEM_VERSION='2.0'`
-- home identity: Event Ecosystem Platform
-- discovery groups: Talent / Production / Services / Organizer / Venue
-- EO/WO and Venue in Professional Partner discovery/onboarding
-- service discovery grouped by five ecosystem pillars
-- search messaging expanded to organizer/venue/production categories
-- partner onboarding stores partner group + category
-- Package Builder and Managed Events remain inactive
-- static/offline shell and manifest aligned to Event Ecosystem positioning
+## Event Ecosystem Core Catalog — VERIFIED v1.0.7
+The five-pillar catalog is now compiled into the **core Vite bundle**, not dependent only on a lazy/injected UI module.
+
+Core customer catalog:
+1. Talent
+2. Production
+3. Services
+4. Organizer
+5. Venue
+
+Organizer contains:
+- Event Organizer
+- Wedding Organizer
+- Party Planner
+- Corporate Event Planner
+
+Venue contains Club, Villa, Hotel/Ballroom, Beach Venue, and Venue Lainnya.
+
+### Root cause of missing EO/WO in v1.0.6
+Real-device screenshots showed `Semua Layanan` still rendering the legacy hard-coded groups **Entertainment / Creative / Rental**.
+
+Two causes were identified and corrected:
+1. the legacy `main.js` services renderer was still embedded in the core application path, while Event Ecosystem had initially been added as an overlay/lazy module;
+2. the service worker precache included `/main.js?v=84`, but Vite outputs the compiled entry under `/assets/...`; a failed new worker installation could therefore leave an older worker/cache controlling the app.
+
+### v1.0.7 core/cache fix
+- Vite pre-transform recognizes `main.js` even when requested with query strings.
+- legacy `services()` catalog is replaced in the core bundle.
+- transform fails if legacy Entertainment/Creative/Rental catalog survives.
+- core catalog marker: `globalThis.ENTEGO_CORE_CATALOG_VERSION="2.2"`.
+- production bundle names are versioned as `assets/index-v85.js` and `assets/index-v85.css` to escape stale cached asset names.
+- service worker cache generation: `entego-v85`.
+- service worker precache no longer includes nonexistent source `/main.js?v=85`.
+- hard CI verification requires Organizer, Event Organizer, Wedding Organizer, Party Planner, Corporate Event Planner and Venue in the compiled core bundle.
+- hard CI verification rejects the legacy grouped catalog and the old Rp900.000 mock price.
+
+### Final APK internal inspection
+The privately signed final APK was opened and inspected after signing.
+Verified inside `assets/public/assets/index-v85.js`:
+- `ENTEGO PROFESSIONAL PARTNER` present
+- Organizer present
+- Event Organizer present
+- Wedding Organizer present
+- Party Planner present
+- Corporate Event Planner present
+- Venue Lainnya present
+- legacy `Entertainment / Creative / Rental` grouped catalog absent
+- old `price:900000` marker absent
+
+Verified inside `assets/public/sw.js`:
+- cache generation `entego-v85` present
+- bad `/main.js?v=85` precache entry absent
 
 ## Repository / Runtime
 - Repo: `ardarawk-cloud/Entego-PWA`
@@ -137,16 +178,16 @@ Implemented in web/PWA and Android bundle without activating Phase 2/3:
 - Android web contents debugging disabled in production config.
 
 ## Android Stable Release Chain
-### Current stable build
-- Version: **v1.0.6**
-- versionCode: **100046**
+### Current verified stable build
+- Version: **v1.0.7**
+- versionCode: **110001**
 - applicationId: `com.ardacore.entego`
-- foundation marker: `event-ecosystem-v2`
-- partner service menu: `1.1`
+- core catalog: **2.2**
+- asset generation: **v85**
 - minimum service price: `1000000`
-- build commit: `d4357d260bdc52bed2b2d8194a31dbd081fb760c`
-- GitHub Actions run: `31935361032` — build steps SUCCESS
-- protected-signing artifact ID: `9260503304`
+- verified build workflow: `ENTEGO v1.0.7 CORE CATALOG FIX`
+- GitHub Actions run: `31937931309` — SUCCESS
+- protected-signing artifact ID: `9261217286`
 
 ### Signing verification
 Protected candidate was privately signed with the existing ENTEGO stable/upload identity.
@@ -155,18 +196,17 @@ Protected candidate was privately signed with the existing ENTEGO stable/upload 
 - v3 signature: true
 - v4 signature: false
 - signer certificate SHA-256: `32d3bbe17fb9675b3b60d32cc027c8b97a34c9e6750814fc43ab798e0d9c31de`
-- signer matches the v1.0.4/v1.0.5 stable update chain.
+- signer matches the v1.0.4/v1.0.5/v1.0.6 stable update chain.
 
-Therefore v1.0.6 can update v1.0.5/v1.0.4 in place when installed through the same stable sideload chain and Android versionCode rules are satisfied.
+Therefore v1.0.7 can update the existing stable ENTEGO installation in place as long as the installed copy belongs to the same stable signing chain and has a lower versionCode.
 
 ### Distribution files produced
-- Stable update APK: `ENTEGO-Android-v1.0.6-STABLE-UPDATEABLE.apk`
-- Play upload AAB: `ENTEGO-Android-v1.0.6-PLAY-UPLOAD.aab`
+- Stable update APK: `ENTEGO-Android-v1.0.7-CORE-CATALOG-FIX-STABLE-UPDATEABLE.apk`
+- Play upload AAB: `ENTEGO-Android-v1.0.7-CORE-CATALOG-FIX-PLAY-UPLOAD.aab`
 
-The signed AAB is for future Play testing/upload preparation. **v1.0.6 is not labeled Play Production Candidate** because the Play-readiness P0 gate is not yet complete.
+The signed AAB is for Play preparation/testing. **v1.0.7 is not labeled Play Production Candidate** because Play-readiness P0 is not yet complete.
 
-Stable workflow: `.github/workflows/android-stable-apk.yml`.
-`ANDROID-UPDATE-POLICY.md` remains authoritative for update-chain rules.
+`ANDROID-UPDATE-POLICY.md` remains authoritative for signing/update-chain principles. Future Android workflow versionCodes must remain above **110001**.
 
 ## KYC / Identity
 - Supported IDs: KTP, SIM, PASSPORT.
@@ -228,12 +268,14 @@ Do not label a build `Play Production Candidate` until all P0 items are complete
 
 ## Last Safe Point
 - Business Foundation v2.0 locked: ENTEGO = Event Ecosystem Platform.
-- Phase 1 Professional Partner taxonomy is present in the app/APK.
-- EO + WO + Venue are included in Phase 1 partner/discovery foundation.
+- Phase 1 Professional Partner taxonomy is compiled into the application core.
+- Organizer is customer-visible by design and contains EO + WO + Party Planner + Corporate Event Planner.
+- Venue is included in the core service catalog.
 - Partner **Menu Layanan & Harga** is implemented.
 - Pricing Policy v1.0 is locked at minimum **Rp1.000.000** for positive active partner prices, enforced client + server.
-- v1.0.6 stable APK has been built, privately signed, and verified in the stable update chain.
-- v1.0.6 signed AAB has been produced for future Play testing/upload preparation.
+- v1.0.7 Core Catalog Fix passed hard bundle verification and Android build.
+- final v1.0.7 APK was privately signed and internally inspected after signing.
+- v1.0.7 signer matches the established stable ENTEGO update chain.
 - Phase 2 Package Builder remains future.
 - Phase 3 Managed Events remains future and requires explicit Arda approval.
 - next maturity phase remains Privacy Policy + Account Deletion + Data Safety readiness, followed by full Android QA and store assets.
