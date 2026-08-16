@@ -26,6 +26,8 @@
     (()=>{
       const ENTEGO_BOOT_VERSION='87';
       const ENTEGO_ASSET_STRATEGY='home-override-logo-lock-v87';
+      const ENTEGO_LOGO_LOCK='/logo-header.png?v=87';
+      window.ENTEGO_LOGO_LOCK=ENTEGO_LOGO_LOCK;
       const status=()=>document.getElementById('entegoShellStatus');
       setTimeout(()=>{const s=status();if(s&&document.getElementById('entegoStaticShell'))s.textContent='Koneksi lambat — tampilan tetap tersedia, fitur sedang dimuat…'},3000);
       window.addEventListener('error',e=>{if((e.target?.tagName==='SCRIPT'||e.target?.tagName==='LINK')&&status())status().textContent='Modul belum termuat. ENTEGO akan mencoba lagi saat koneksi tersedia.'},true);
