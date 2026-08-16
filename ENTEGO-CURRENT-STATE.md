@@ -1,6 +1,6 @@
 # ENTEGO CURRENT STATE
 
-Checkpoint: 2026-08-17 / Event Ecosystem v3 / Android v1.0.9
+Checkpoint: 2026-08-17 / Event Ecosystem v3 / Android v1.0.10
 Owner / Final Authority: Arda
 Startup command: `KAI ENTEGO START`
 Status: LAST VERIFIED SAFE POINT
@@ -8,7 +8,7 @@ Status: LAST VERIFIED SAFE POINT
 ## Current Phase
 ENTEGO remains in **Phase 1 — Marketplace / Enabler** plus Google Play maturity preparation.
 
-Current verified Android distribution baseline: **v1.0.9 — Home Override + Logo Hard Lock**.
+Current verified Android distribution baseline: **v1.0.10 — KYC Last-4 Validation Fix**.
 Target after Play-readiness P0/P1 gates are complete remains: **v1.1.0 Play Production Candidate**.
 
 ## Official Foundation Files
@@ -70,11 +70,10 @@ Current Home structure:
 - category-specific monochrome SVG icons
 - `Layanan Populer`: DJ, MUA, Sound System, Photographer, Wedding Organizer, Villa
 
-Core markers:
+Core markers retained in v1.0.10:
 - `globalThis.ENTEGO_HOME_VERSION="1.0.9"`
 - `globalThis.ENTEGO_CORE_CATALOG_VERSION="3.1"`
-- asset generation `v87`
-- service worker cache `entego-v87`
+- core asset generation `v87`
 
 ## Logo Hard Lock — VERIFIED
 Arda explicitly requires the original/master ENTEGO pin-play logo to remain stable across updates.
@@ -82,7 +81,7 @@ Arda explicitly requires the original/master ENTEGO pin-play logo to remain stab
 Current authoritative asset:
 - `logo-header.png`
 
-v1.0.9 safeguards:
+Safeguards retained in v1.0.10:
 - core bundle references `/logo-header.png?v=87`
 - static shell contains explicit `ENTEGO_LOGO_LOCK='/logo-header.png?v=87'`
 - service worker precaches `/logo-header.png?v=87`
@@ -143,22 +142,50 @@ Trust firewall:
 
 Current implementation is foundation/draft UX only. It does not falsely charge or activate paid Boost before ENTEGO billing exists.
 
-## Android v1.0.9 — VERIFIED
-GitHub Actions run: `31958114963` — SUCCESS
-Build commit: `a33396643b3e4ce3afb9c5b3cd227f0c292a3534`
-Protected candidate artifact: `9266533610`
+## KYC / Identity v1.0.10 — VERIFIED
+Android v1.0.9 exposed a misleading KYC UX: the field `4 digit terakhir rekening` used gray placeholder text `5678`. This could visually appear to be a filled value while the actual input value remained empty, causing the submit validator to return the generic `identity_details_required` message.
+
+v1.0.10 fixes this without weakening backend KYC requirements.
+
+KYC safeguards:
+- supported identity types remain KTP, SIM, PASSPORT
+- private KYC media storage remains protected
+- partner payout eligibility still requires approved identity verification
+- full identity number and full bank account number remain rejected by the KYC metadata form
+- `bankAccountLast4` still requires exactly 4 digits
+
+Client hotfix:
+- `IDENTITY_SUBMIT_HOTFIX_VERSION='79'`
+- misleading `5678` placeholder is replaced at runtime with `Masukkan 4 digit terakhir`
+- validation is field-specific and focuses/highlights the actual missing field
+- missing account suffix message explicitly states that the former gray text was only an example, not stored data
+- unfinished KYC form values are preserved in session storage across camera/DOM re-render flows
+- draft is cleared after successful KYC submission
+
+Cache delivery:
+- `route-loader-flow.js` → `RL_VERSION='88'`
+- service-worker cache → `entego-v88`
+- directory cache → `entego-directory-v88`
+- source boot loads `/route-loader-flow.js?v=88` and `/sw.js?v=88`
+
+## Android v1.0.10 — VERIFIED
+GitHub Actions run: `31959783871` — SUCCESS
+Build commit: `5d59cacedd50d0f73d8fe5e85c7cd4c6f88c0f61`
+Protected candidate artifact: `9266958100`
 
 Android identity:
 - applicationId: `com.ardacore.entego` — HARD LOCK
-- versionName: `1.0.9`
-- versionCode: `130087`
+- versionName: `1.0.10`
+- versionCode: `130089`
 - target SDK: API 36
-- asset/cache generation: `v87`
+- Home/core asset generation: `v87`
+- KYC/lazy-loader/service-worker generation: `v88`
 
 Update chain:
 - v1.0.7 Core Catalog Fix: versionCode `110001`
 - v1.0.8: versionCode `120079`
 - v1.0.9: versionCode `130087`
+- v1.0.10: versionCode `130089`
 
 Private final signing verification:
 - APK Signature v1: false
@@ -169,27 +196,20 @@ Private final signing verification:
 - signer matches the existing ENTEGO stable sideload/update identity.
 
 Final produced files:
-- `ENTEGO-Android-v1.0.9-STABLE-UPDATEABLE.apk`
-- `ENTEGO-Android-v1.0.9-PLAY-UPLOAD.aab`
+- `ENTEGO-Android-v1.0.10-STABLE-UPDATEABLE.apk`
+- `ENTEGO-Android-v1.0.10-PLAY-UPLOAD.aab`
 
 Final APK was inspected directly after signing and verified to contain:
-- `assets/public/assets/index-v87.js`
-- `assets/public/index.html`
+- `assets/public/identity-submit-hotfix-flow.js`
+- `IDENTITY_SUBMIT_HOTFIX_VERSION='79'`
+- runtime placeholder text `Masukkan 4 digit terakhir`
+- explicit missing-last4 guidance
+- `assets/public/route-loader-flow.js` with `RL_VERSION='88'`
+- `assets/public/sw.js` with `entego-v88`
+- `assets/public/assets/index-v87.js` with Home marker `globalThis.ENTEGO_HOME_VERSION="1.0.9"`
 - `assets/public/logo-header.png`
-- `assets/public/sw.js`
-- Home marker `globalThis.ENTEGO_HOME_VERSION="1.0.9"`
-- `Jelajahi Kategori`
-- core logo reference `/logo-header.png?v=87`
-- service worker cache `entego-v87`
-- static explicit logo lock
 
-Therefore the Home redesign and master logo are confirmed inside the actual distributed APK, not merely in source code.
-
-## KYC / Identity
-- supported identity types: KTP, SIM, PASSPORT
-- private KYC media storage remains protected
-- partner payout eligibility requires approved identity verification
-- submit hotfix remains active
+Therefore the KYC fix, Home baseline, and master logo were confirmed inside the actual distributed APK, not merely in source code.
 
 ## Google Play Readiness — NOT YET COMPLETE
 Tracking issue: #2 — `Play Store Readiness v1.1.0 — Production Candidate`.
@@ -205,7 +225,7 @@ P0 remains:
 8. payment-policy review for future digital products
 9. required Play declarations
 
-Do **not** call v1.0.9 a Play Production Candidate. It is the latest stable product-development baseline.
+Do **not** call v1.0.10 a Play Production Candidate. It is the latest stable product-development baseline.
 
 ## Last Safe Point
 - Event Ecosystem v3 taxonomy locked and implemented.
@@ -218,7 +238,8 @@ Do **not** call v1.0.9 a Play Production Candidate. It is the latest stable prod
 - Menu Layanan & Harga remains active.
 - Rp1.000.000 pricing floor remains active client + server.
 - Boost / Promo / Campaign marketing foundation remains active as non-billing draft UX.
-- Android v1.0.9 built, content-gated, privately signed, and verified in the stable update chain.
+- KYC last-4 UX bug fixed with field-specific validation and session draft preservation.
+- Android v1.0.10 built, content-gated, privately signed, and verified in the stable update chain.
 - Phase 2 Package Builder remains future.
 - Phase 3 Managed Events remains future and requires explicit Arda approval.
 - next major maturity work remains Privacy Policy + Account Deletion + Data Safety, then full Android QA and store assets.
