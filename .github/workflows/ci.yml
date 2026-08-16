@@ -37,7 +37,7 @@ jobs:
           from pathlib import Path
 
           required_files=[
-            'dist/index.html','dist/sw.js','dist/assets/index-v87.js','dist/assets/index-v87.css',
+            'index.html','dist/index.html','dist/sw.js','dist/assets/index-v87.js','dist/assets/index-v87.css',
             'dist/logo-header.png','dist/event-ecosystem-flow.js','dist/service-menu-flow.js',
             'dist/partner-category-flow.js','dist/account-route-fix-flow.js','dist/route-loader-flow.js',
             'dist/production-truth-gate-flow.js','dist/production-guard-flow.js','dist/premium-ui-flow.js',
@@ -59,7 +59,8 @@ jobs:
               'Event Organizer','Wedding Organizer','MUA','/logo-header.png?v=87'
             ],
             'dist/route-loader-flow.js':["RL_VERSION='88'",'identity-center-flow.js','identity-submit-hotfix-flow.js','service-menu-flow.js','@vite-ignore','rlIdle'],
-            'dist/index.html':["ENTEGO_BOOT_VERSION='88'",'/sw.js?v=88','/route-loader-flow.js?v=88','/logo-header.png?v=87','id="entegoStaticShell"','Semua kebutuhan event, satu tempat.',"updateViaCache:'none'",'visibilitychange'],
+            'index.html':['/sw.js?v=88','/route-loader-flow.js?v=88','/logo-header.png?v=87'],
+            'dist/index.html':["ENTEGO_BOOT_VERSION='88'",'/sw.js?v=88','/logo-header.png?v=87','id="entegoStaticShell"','Semua kebutuhan event, satu tempat.',"updateViaCache:'none'",'visibilitychange'],
             'dist/sw.js':['const CACHE="entego-v88"','const DIRECTORY_CACHE="entego-directory-v88"','/assets/index-v87.js','/route-loader-flow.js?v=88','appShellNavigation','cacheFirst'],
             'dist/event-ecosystem-flow.js':["ENTEGO_EVENT_ECOSYSTEM_VERSION='3.0'",'Event Organizer','Wedding Organizer','MUA'],
             'dist/service-menu-flow.js':["ENTEGO_SERVICE_MENU_VERSION='1.1'",'ENTEGO_MIN_SERVICE_PRICE=1000000'],
