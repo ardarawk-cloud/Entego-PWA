@@ -1,4 +1,5 @@
-const IDENTITY_SUBMIT_HOTFIX_VERSION='78';
+const IDENTITY_SUBMIT_HOTFIX_VERSION='79';
+const ISH_DRAFT_KEY='entego_identity_form_draft_v79';
 
 const ishEsc=v=>String(v??'').trim();
 const ishDigits=v=>String(v??'').replace(/\D/g,'').slice(0,4);
@@ -19,7 +20,7 @@ function ishStatus(box,text,ok=false){
 
 function ishMessage(code){
   return ({
-    identity_details_required:'Lengkapi nama sesuai identitas, nomor HP, 4 karakter terakhir identitas, bank, nama pemilik rekening, dan 4 digit terakhir rekening.',
+    identity_details_required:'Lengkapi data identitas yang masih kosong.',
     identity_consent_required:'Centang persetujuan pemrosesan data identitas sebelum mengirim.',
     identity_documents_required:'Upload foto identitas dan selfie terlebih dahulu.',
     invalid_identity_type:'Pilih jenis identitas KTP, SIM, atau Paspor.',
@@ -50,17 +51,77 @@ function ishPayload(box){
   };
 }
 
-function ishValidate(payload){
-  if(!['KTP','SIM','PASSPORT'].includes(payload.idType))return 'invalid_identity_type';
-  if(!payload.legalName||!payload.phone||payload.idLast4.length!==4||!payload.bankName||!payload.bankAccountName||payload.bankAccountLast4.length!==4)return 'identity_details_required';
-  if(!payload.consent)return 'identity_consent_required';
-  return '';
+function ishReadDraft(){
+  try{return JSON.parse(sessionStorage.getItem(ISH_DRAFT_KEY)||'null')}catch{return null}
+}
+function ishWriteDraft(payload){
+  try{sessionStorage.setItem(ISH_DRAFT_KEY,JSON.stringify(payload))}catch{}
+}
+function ishClearDraft(){
+  try{sessionStorage.removeItem(ISH_DRAFT_KEY)}catch{}
+}
+
+function ishCaptureDraft(box){
+  if(!box)return;
+  ishWriteDraft(ishPayload(box));
+}
+
+function ishRestoreDraft(box){
+  const d=ishReadDraft();if(!box||!d)return;
+  const pairs=[
+    ['#icLegalName','legalName'],['#icPhone','phone'],['#icIdLast4','idLast4'],
+    ['#icBankName','bankName'],['#icBankAccountName','bankAccountName'],['#icBankLast4','bankAccountLast4']
+  ];
+  const type=box.querySelector('#icIdType');
+  if(type&&!type.disabled&&d.idType&&!type.value)type.value=d.idType;
+  for(const [selector,key] of pairs){const el=box.querySelector(selector);if(el&&!el.disabled&&!String(el.value||'').trim()&&d[key])el.value=d[key]}
+  const consent=box.querySelector('#icConsent');if(consent&&!consent.checked&&d.consent)consent.checked=true;
+}
+
+function ishTuneBox(box){
+  if(!box)return;
+  const bankLast4=box.querySelector('#icBankLast4');
+  if(bankLast4){
+    bankLast4.placeholder='Masukkan 4 digit terakhir';
+    bankLast4.setAttribute('aria-label','4 digit terakhir rekening');
+    bankLast4.setAttribute('autocomplete','off');
+  }
+  ishRestoreDraft(box);
+  if(box.dataset.entegoKyc79==='1')return;
+  box.dataset.entegoKyc79='1';
+  box.addEventListener('input',()=>ishCaptureDraft(box),true);
+  box.addEventListener('change',()=>ishCaptureDraft(box),true);
+}
+
+function ishInvalid(payload){
+  if(!['KTP','SIM','PASSPORT'].includes(payload.idType))return {code:'invalid_identity_type',field:'#icIdType',message:'Pilih jenis identitas KTP, SIM, atau Paspor.'};
+  if(!payload.legalName)return {code:'identity_details_required',field:'#icLegalName',message:'Nama sesuai identitas belum diisi.'};
+  if(!payload.phone)return {code:'identity_details_required',field:'#icPhone',message:'Nomor HP aktif belum diisi.'};
+  if(payload.idLast4.length!==4)return {code:'identity_details_required',field:'#icIdLast4',message:`Isi tepat 4 ${payload.idType==='PASSPORT'?'karakter':'digit'} terakhir identitas.`};
+  if(!payload.bankName)return {code:'identity_details_required',field:'#icBankName',message:'Bank tujuan payout belum diisi.'};
+  if(!payload.bankAccountName)return {code:'identity_details_required',field:'#icBankAccountName',message:'Nama pemilik rekening belum diisi.'};
+  if(payload.bankAccountLast4.length!==4)return {code:'identity_details_required',field:'#icBankLast4',message:'Isi 4 digit terakhir rekening. Teks abu-abu sebelumnya hanya contoh, bukan data yang sudah tersimpan.'};
+  if(!payload.consent)return {code:'identity_consent_required',field:'#icConsent',message:'Centang persetujuan pemrosesan data identitas sebelum mengirim.'};
+  return null;
+}
+
+function ishFocusInvalid(box,invalid){
+  ishStatus(box,invalid.message||ishMessage(invalid.code));
+  const field=box.querySelector(invalid.field);
+  if(!field)return;
+  field.scrollIntoView({behavior:'smooth',block:'center'});
+  try{field.focus({preventScroll:true})}catch{try{field.focus()}catch{}}
+  const old=field.style.boxShadow;
+  field.style.boxShadow='0 0 0 3px rgba(249,115,22,.28)';
+  setTimeout(()=>{if(field.isConnected)field.style.boxShadow=old},1800);
 }
 
 async function ishSubmit(button,box){
   if(button.dataset.entegoSubmitting==='1')return;
-  const payload=ishPayload(box),invalid=ishValidate(payload);
-  if(invalid){ishStatus(box,ishMessage(invalid));return}
+  ishTuneBox(box);
+  const payload=ishPayload(box),invalid=ishInvalid(payload);
+  if(invalid){ishFocusInvalid(box,invalid);return}
+  ishWriteDraft(payload);
   const original=button.textContent;
   button.dataset.entegoSubmitting='1';
   button.disabled=true;
@@ -78,11 +139,13 @@ async function ishSubmit(button,box){
     const submitted=await ishJson('/api/partner/me/identity/submit',{method:'POST'});
     if(!submitted.response.ok||!submitted.data.ok)throw new Error(submitted.data.error||'identity_submit_failed');
 
+    ishClearDraft();
     ishStatus(box,'Verifikasi berhasil dikirim. Data identitas sekarang menunggu pemeriksaan Admin ENTEGO.',true);
     button.textContent='Verifikasi Terkirim';
     setTimeout(()=>{if(box.isConnected)box.remove()},650);
   }catch(error){
-    ishStatus(box,ishMessage(error?.message));
+    const code=String(error?.message||'');
+    ishStatus(box,ishMessage(code));
     button.disabled=false;
     button.textContent=original;
   }finally{
@@ -97,6 +160,12 @@ document.addEventListener('click',event=>{
   event.stopImmediatePropagation();
   const box=button.closest('#entegoIdentityCenter');
   if(!box)return;
+  ishTuneBox(box);
   if(button.disabled){ishStatus(box,'Upload foto identitas dan selfie terlebih dahulu.');return}
   void ishSubmit(button,box);
 },true);
+
+const ishObserver=new MutationObserver(()=>{const box=document.querySelector('#entegoIdentityCenter');if(box)ishTuneBox(box)});
+ishObserver.observe(document.documentElement,{childList:true,subtree:true});
+window.addEventListener('load',()=>{const box=document.querySelector('#entegoIdentityCenter');if(box)ishTuneBox(box)});
+const ishInitial=document.querySelector('#entegoIdentityCenter');if(ishInitial)ishTuneBox(ishInitial);

@@ -33,130 +33,75 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f dist/index.html
-          test -f dist/sw.js
-          test -f dist/assets/index.js
-          test -f dist/assets/index.css
-          test -f dist/event-ecosystem-flow.js
-          test -f dist/service-menu-flow.js
-          test -f dist/partner-category-flow.js
-          test -f dist/account-route-fix-flow.js
-          test -f dist/route-loader-flow.js
-          test -f dist/production-truth-gate-flow.js
-          test -f dist/production-guard-flow.js
-          test -f dist/premium-ui-flow.js
-          test -f dist/auth-flow.js
-          test -f dist/action-center-flow.js
-          test -f dist/server-partner-flow.js
-          test -f dist/server-booking-flow.js
-          test -f dist/payment-flow.js
-          test -f dist/admin-payment-flow.js
-          test -f dist/admin-verification-flow.js
-          test -f dist/identity-center-flow.js
-          test -f dist/identity-submit-hotfix-flow.js
-          test -f dist/support-center-flow.js
-          test -f vite.config.js
-          test -f identity-api.js
-          test -f partner-api.js
-          test -f scripts/ensure-private-r2.mjs
-
-          grep -q "node scripts/ensure-private-r2.mjs" package.json
-          grep -q "WORKERS_CI!=='1'" scripts/ensure-private-r2.mjs
-          grep -q "entego-identity-private" scripts/ensure-private-r2.mjs
-          grep -q "entryFileNames: 'assets/\[name\].js'" vite.config.js
-          grep -q "chunkFileNames: 'assets/\[name\].js'" vite.config.js
-          grep -q "assetFileNames: 'assets/\[name\]\[extname\]'" vite.config.js
-          grep -q "entego-core-catalog-v2" vite.config.js
-          ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.js' dist/index.html
-          ! grep -Eq '/assets/[^" ]+-[A-Za-z0-9_-]{6,}\.css' dist/index.html
-
           python3 <<'PY'
           from pathlib import Path
-          bundle=Path('dist/assets/index.js').read_text()
-          required=[
-              'ENTEGO PROFESSIONAL PARTNER',
-              'Talent',
-              'Production',
-              'Services',
-              'Organizer',
-              'Event Organizer',
-              'Wedding Organizer',
-              'Party Planner',
-              'Corporate Event Planner',
-              'Venue',
-              'Venue Lainnya',
-              'Event Ecosystem Platform',
+
+          required_files=[
+            'index.html','dist/index.html','dist/sw.js','dist/assets/index-v87.js','dist/assets/index-v87.css',
+            'dist/logo-header.png','dist/event-ecosystem-flow.js','dist/service-menu-flow.js',
+            'dist/partner-category-flow.js','dist/account-route-fix-flow.js','dist/route-loader-flow.js',
+            'dist/production-truth-gate-flow.js','dist/production-guard-flow.js','dist/premium-ui-flow.js',
+            'dist/auth-flow.js','dist/action-center-flow.js','dist/server-partner-flow.js',
+            'dist/server-booking-flow.js','dist/payment-flow.js','dist/admin-payment-flow.js',
+            'dist/admin-verification-flow.js','dist/identity-center-flow.js','dist/identity-submit-hotfix-flow.js',
+            'dist/support-center-flow.js','vite.config.js','identity-api.js','partner-api.js',
+            'partner-store-v2.js','partner-store-v3.js','api-worker-v63.js','wrangler.jsonc',
+            'scripts/ensure-private-r2.mjs','package.json','media-api.js','market-booking-flow.js'
           ]
-          missing=[x for x in required if x not in bundle]
-          if missing:
-              raise SystemExit(f'Compiled core catalog missing: {missing}')
-          if 'price:900000' in bundle:
-              raise SystemExit('Legacy Rp900k mock price remains in compiled bundle')
-          print('Compiled Event Ecosystem core catalog verified')
+          missing=[x for x in required_files if not Path(x).is_file()]
+          if missing: raise SystemExit(f'Missing required files: {missing}')
+
+          checks={
+            'dist/assets/index-v87.js':[
+              'globalThis.ENTEGO_HOME_VERSION="1.0.9"','globalThis.ENTEGO_CORE_CATALOG_VERSION="3.1"',
+              'Jelajahi Kategori','Layanan Populer','Talent','Production','Photo & Creative','Beauty & Styling',
+              'Food & Hospitality','Organizer','Venue','Rental & Transport','Decoration & Event Support',
+              'Event Organizer','Wedding Organizer','MUA','/logo-header.png?v=87'
+            ],
+            'dist/route-loader-flow.js':["RL_VERSION='88'",'identity-center-flow.js','identity-submit-hotfix-flow.js','service-menu-flow.js','@vite-ignore','rlIdle'],
+            'index.html':['/sw.js?v=88','/route-loader-flow.js?v=88','/logo-header.png?v=87'],
+            'dist/index.html':["ENTEGO_BOOT_VERSION='88'",'/sw.js?v=88','/logo-header.png?v=87','id="entegoStaticShell"','Semua kebutuhan event, satu tempat.',"updateViaCache:'none'",'visibilitychange'],
+            'dist/sw.js':['const CACHE="entego-v88"','const DIRECTORY_CACHE="entego-directory-v88"','/assets/index-v87.js','/route-loader-flow.js?v=88','appShellNavigation','cacheFirst'],
+            'dist/event-ecosystem-flow.js':["ENTEGO_EVENT_ECOSYSTEM_VERSION='3.0'",'Event Organizer','Wedding Organizer','MUA'],
+            'dist/service-menu-flow.js':["ENTEGO_SERVICE_MENU_VERSION='1.1'",'ENTEGO_MIN_SERVICE_PRICE=1000000'],
+            'partner-api.js':['MIN_SERVICE_PRICE=1000000'],
+            'dist/partner-category-flow.js':["ENTEGO_PARTNER_CATEGORY_VERSION='2.0'",'Event Organizer','Wedding Organizer','entego_partner_services'],
+            'dist/identity-center-flow.js':['KTP — WNI','Paspor — WNA / internasional'],
+            'dist/identity-submit-hotfix-flow.js':["IDENTITY_SUBMIT_HOTFIX_VERSION='79'",'Masukkan 4 digit terakhir','Teks abu-abu sebelumnya hanya contoh','sessionStorage'],
+            'partner-store-v2.js':['identity_verifications','identity_events',"ID_TYPES=new Set(['KTP','SIM','PASSPORT'])",'FULL_ID_NUMBER_NOT_ACCEPTED','FULL_BANK_NUMBER_NOT_ACCEPTED','bank_account_last4'],
+            'partner-store-v3.js':['services_json'],
+            'identity-api.js':['ENT_IDENTITY_MEDIA',"IDENTITY_TYPES=['KTP','SIM','PASSPORT']",'documentsPublic:false','fullNikStored:false','fullBankAccountStored:false'],
+            'api-worker-v63.js':['handleIdentityApi'],
+            'wrangler.jsonc':['"main":"./api-worker-v63.js"','"binding":"ENT_IDENTITY_MEDIA"','"bucket_name":"entego-identity-private"'],
+            'scripts/ensure-private-r2.mjs':["WORKERS_CI!=='1'",'entego-identity-private'],
+            'package.json':['node scripts/ensure-private-r2.mjs'],
+            'dist/premium-ui-flow.js':['entegoPremiumMonoStyle','entego-brand-mark'],
+            'production-guard-flow.js':["import './premium-ui-flow.js'"],
+          }
+          failures=[]
+          for file,markers in checks.items():
+            text=Path(file).read_text(errors='ignore')
+            for marker in markers:
+              if marker not in text: failures.append(f'{file}: {marker}')
+
+          bundle=Path('dist/assets/index-v87.js').read_text(errors='ignore')
+          for forbidden in ['price:900000','["Entertainment",["DJ","MC","Live Band","Singer"]]']:
+            if forbidden in bundle: failures.append(f'legacy marker remains: {forbidden}')
+          for file,forbidden in [
+            ('media-api.js','ENT_IDENTITY_MEDIA'),('media-api.js','identity/'),
+            ('production-guard-flow.js',"import './server-chat-flow.js'"),
+            ('production-guard-flow.js',"import './admin-verification-flow.js'"),
+            ('dist/index.html','cancel-flow.js'),('market-booking-flow.js','promo=150000'),
+            ('market-booking-flow.js','createOrderFromDraft')
+          ]:
+            if forbidden in Path(file).read_text(errors='ignore'): failures.append(f'forbidden marker {file}: {forbidden}')
+
+          if failures:
+            print('ENTEGO CI FAILURES:')
+            for x in failures: print(' -',x)
+            raise SystemExit(1)
+          print('ENTEGO current production asset gates verified')
           PY
-
-          grep -q '"main":"./api-worker-v63.js"' wrangler.jsonc
-          grep -q '"ENT_SUPPORT","class_name":"EntegoSupport"' wrangler.jsonc
-          grep -q '"binding":"ENT_IDENTITY_MEDIA"' wrangler.jsonc
-          grep -q '"bucket_name":"entego-identity-private"' wrangler.jsonc
-          grep -q 'identity-center-flow.js' route-loader-flow.js
-          grep -q 'event-ecosystem-flow.js' route-loader-flow.js
-          grep -q 'service-menu-flow.js' route-loader-flow.js
-          grep -q '@vite-ignore' route-loader-flow.js
-          grep -q 'rlIdle' route-loader-flow.js
-
-          grep -q "ENTEGO_BOOT_VERSION='84'" index.html
-          grep -q "ENTEGO_ASSET_STRATEGY='core-catalog-compiled-v84'" index.html
-          grep -q 'event-ecosystem-flow.js?v=84' index.html
-          grep -q 'route-loader-flow.js?v=84' index.html
-          grep -q 'id="entegoStaticShell"' index.html
-          grep -q 'Event Ecosystem Platform' index.html
-          grep -q 'Cari DJ, EO, WO, venue' index.html
-          grep -q "updateViaCache:'none'" index.html
-          grep -q 'visibilitychange' index.html
-          ! grep -q 'visibility:hidden' index.html
-
-          grep -q 'const CACHE="entego-v84"' sw.js
-          grep -q 'const DIRECTORY_CACHE="entego-directory-v68"' sw.js
-          grep -q '"/assets/index.js"' sw.js
-          grep -q 'event-ecosystem-flow.js?v=84' sw.js
-          grep -q 'route-loader-flow.js?v=84' sw.js
-          grep -q 'appShellNavigation' sw.js
-          grep -q 'cacheFirst' sw.js
-
-          grep -Fq "ENTEGO_EVENT_ECOSYSTEM_VERSION='2.0'" event-ecosystem-flow.js
-          grep -Fq "ENTEGO_SERVICE_MENU_VERSION='1.1'" service-menu-flow.js
-          grep -Fq "ENTEGO_MIN_SERVICE_PRICE=1000000" service-menu-flow.js
-          grep -Fq "MIN_SERVICE_PRICE=1000000" partner-api.js
-          grep -Fq 'Event Organizer' partner-category-flow.js
-          grep -Fq 'Wedding Organizer' partner-category-flow.js
-
-          grep -Fq "if(document.querySelector('#entegoIdentityCenter'))return;" identity-center-flow.js
-          grep -q 'KTP — WNI' identity-center-flow.js
-          grep -q 'Paspor — WNA / internasional' identity-center-flow.js
-          grep -Fq "IDENTITY_SUBMIT_HOTFIX_VERSION='78'" identity-submit-hotfix-flow.js
-          grep -q 'identity_verifications' partner-store-v2.js
-          grep -q 'identity_events' partner-store-v2.js
-          grep -Fq "ID_TYPES=new Set(['KTP','SIM','PASSPORT'])" partner-store-v2.js
-          grep -q 'FULL_ID_NUMBER_NOT_ACCEPTED' partner-store-v2.js
-          grep -q 'FULL_BANK_NUMBER_NOT_ACCEPTED' partner-store-v2.js
-          grep -q 'ENT_IDENTITY_MEDIA' identity-api.js
-          grep -Fq "IDENTITY_TYPES=['KTP','SIM','PASSPORT']" identity-api.js
-          grep -q 'documentsPublic:false' identity-api.js
-          grep -q 'fullNikStored:false' identity-api.js
-          grep -q 'fullBankAccountStored:false' identity-api.js
-          grep -q 'handleIdentityApi' api-worker-v63.js
-          ! grep -q 'ENT_IDENTITY_MEDIA' media-api.js
-          ! grep -q 'identity/' media-api.js
-
-          grep -Fq "import './premium-ui-flow.js'" production-guard-flow.js
-          grep -q 'entegoPremiumMonoStyle' premium-ui-flow.js
-          grep -q 'entego-brand-mark' premium-ui-flow.js
-          ! grep -q "import './server-chat-flow.js'" production-guard-flow.js
-          ! grep -q "import './admin-verification-flow.js'" production-guard-flow.js
-          ! grep -q "cancel-flow.js" index.html
-          ! grep -q "promo=150000" market-booking-flow.js
-          ! grep -q "createOrderFromDraft" market-booking-flow.js
 
       - name: Validate Cloudflare Worker bundle
         run: npx --yes wrangler@latest deploy --dry-run

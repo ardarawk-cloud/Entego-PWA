@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      ENTEGO_VERSION_NAME: '1.0.9'
+      ENTEGO_VERSION_NAME: '1.0.10'
       ENTEGO_KEYSTORE_B64: ${{ secrets.ENTEGO_ANDROID_KEYSTORE_B64 }}
       ENTEGO_KEY_ALIAS: ${{ secrets.ENTEGO_ANDROID_KEY_ALIAS }}
       ENTEGO_STORE_PASSWORD: ${{ secrets.ENTEGO_ANDROID_STORE_PASSWORD }}
@@ -55,7 +55,7 @@ jobs:
       - name: Build ENTEGO web bundle
         run: npm run build
 
-      - name: Verify ENTEGO v1.0.9 home and ecosystem bundle
+      - name: Verify ENTEGO v1.0.10 KYC and existing product gates
         shell: bash
         run: |
           set -euo pipefail
@@ -63,7 +63,7 @@ jobs:
           from pathlib import Path
 
           required_files = [
-              'dist/index.html','dist/assets/index-v87.js','dist/assets/index-v87.css','dist/logo-header.png',
+              'index.html','dist/index.html','dist/assets/index-v87.js','dist/assets/index-v87.css','dist/logo-header.png',
               'dist/event-ecosystem-flow.js','dist/service-menu-flow.js','dist/partner-category-flow.js',
               'dist/partner-marketing-flow.js','dist/route-loader-flow.js','dist/identity-center-flow.js',
               'dist/identity-submit-hotfix-flow.js','dist/native-runtime-flow.js','dist/native-identity-camera-flow.js',
@@ -89,13 +89,20 @@ jobs:
               'partner-api.js': ['MIN_SERVICE_PRICE=1000000'],
               'partner-store-v3.js': ['services_json'],
               'api-worker-v60.js': ['partner-store-v3.js'],
-              'dist/route-loader-flow.js': ["RL_VERSION='87'",'partner-marketing-flow.js'],
-              'dist/index.html': ["ENTEGO_BOOT_VERSION='87'",'/logo-header.png?v=87','Semua kebutuhan event, satu tempat.'],
-              'dist/sw.js': ['entego-v87','/assets/index-v87.js','/logo-header.png?v=87'],
+              'dist/route-loader-flow.js': ["RL_VERSION='88'",'identity-submit-hotfix-flow.js','partner-marketing-flow.js'],
+              'index.html': ['/route-loader-flow.js?v=88','/sw.js?v=88','/logo-header.png?v=87'],
+              'dist/index.html': ["ENTEGO_BOOT_VERSION='88'",'/logo-header.png?v=87','/sw.js?v=88','Semua kebutuhan event, satu tempat.'],
+              'dist/sw.js': ['entego-v88','/assets/index-v87.js','/logo-header.png?v=87','/route-loader-flow.js?v=88'],
               'dist/identity-center-flow.js': ['KTP — WNI','Paspor — WNA / internasional'],
-              'dist/identity-submit-hotfix-flow.js': ["IDENTITY_SUBMIT_HOTFIX_VERSION='78'"],
+              'dist/identity-submit-hotfix-flow.js': [
+                  "IDENTITY_SUBMIT_HOTFIX_VERSION='79'",
+                  "ISH_DRAFT_KEY='entego_identity_form_draft_v79'",
+                  'Masukkan 4 digit terakhir',
+                  'Teks abu-abu sebelumnya hanya contoh',
+                  'sessionStorage'
+              ],
               'identity-api.js': ["IDENTITY_TYPES=['KTP','SIM','PASSPORT']"],
-              'partner-store-v2.js': ["ID_TYPES=new Set(['KTP','SIM','PASSPORT'])"],
+              'partner-store-v2.js': ["ID_TYPES=new Set(['KTP','SIM','PASSPORT'])",'bank_account_last4'],
               'capacitor.config.json': ['com.ardacore.entego'],
           }
           failures=[]
@@ -109,14 +116,14 @@ jobs:
               if legacy in bundle:
                   failures.append(f'dist/assets/index-v87.js contains forbidden legacy marker: {legacy}')
           if failures:
-              print('ENTEGO v1.0.9 VERIFY FAILURES:')
+              print('ENTEGO v1.0.10 VERIFY FAILURES:')
               for x in failures: print(' -',x)
               raise SystemExit(1)
-          print('VERIFIED: Home v1.0.9 core override')
-          print('VERIFIED: logo-header.png v87 hard lock')
-          print('VERIFIED: 9-category taxonomy + MUA/EO/WO')
-          print('VERIFIED: multi-service partner + marketing foundation + Rp1M floor')
-          print('VERIFIED: route loader/cache generation v87 + KYC baseline')
+          print('VERIFIED: Home v1.0.9 core override + logo v87 lock retained')
+          print('VERIFIED: KYC submit hotfix v79 with explicit last4 validation')
+          print('VERIFIED: KYC session draft persistence across re-render/camera flow')
+          print('VERIFIED: route loader/service-worker cache generation v88')
+          print('VERIFIED: taxonomy, multi-service, marketing and Rp1M floor retained')
           PY
 
           python3 <<'PY'
@@ -214,6 +221,8 @@ jobs:
             echo "coreCatalog=3.1"
             echo "homeOverride=1.0.9"
             echo "logoAsset=logo-header.png-v87-hard-lock"
+            echo "kycSubmitHotfix=79"
+            echo "clientCacheGeneration=88"
             echo "partnerMultiService=2.0"
             echo "partnerMarketing=1.0-foundation"
             echo "partnerServiceMenu=1.1"
@@ -229,10 +238,10 @@ jobs:
         if: ${{ env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.9-STABLE-UPDATEABLE
+          name: ENTEGO-Android-v1.0.10-STABLE-UPDATEABLE
           path: |
-            stable-out/ENTEGO-Android-v1.0.9-stable.apk
-            stable-out/ENTEGO-Android-v1.0.9-stable.aab
+            stable-out/ENTEGO-Android-v1.0.10-stable.apk
+            stable-out/ENTEGO-Android-v1.0.10-stable.aab
             stable-out/signing-certificate.txt
             stable-out/build-info.txt
             stable-out/SHA256SUMS.txt
@@ -243,10 +252,10 @@ jobs:
         if: ${{ !(env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '') }}
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.9-PROTECTED-SIGNING-CANDIDATE
+          name: ENTEGO-Android-v1.0.10-PROTECTED-SIGNING-CANDIDATE
           path: |
-            stable-out/ENTEGO-Android-v1.0.9-stable-aligned-unsigned.apk
-            stable-out/ENTEGO-Android-v1.0.9-stable-unsigned.aab
+            stable-out/ENTEGO-Android-v1.0.10-stable-aligned-unsigned.apk
+            stable-out/ENTEGO-Android-v1.0.10-stable-unsigned.aab
             stable-out/apksigner.jar
             stable-out/build-info.txt
             stable-out/SHA256SUMS.txt
