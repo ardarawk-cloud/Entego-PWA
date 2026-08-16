@@ -1,7 +1,7 @@
-const CACHE="entego-v88";
-const DIRECTORY_CACHE="entego-directory-v88";
+const CACHE="entego-v89";
+const DIRECTORY_CACHE="entego-directory-v89";
 const DIRECTORY_TTL_MS=120000;
-const SHELL=["/","/assets/index-v87.js","/assets/index-v87.css","/manifest.webmanifest?v=87","/icon-192.png?v=87","/icon-512.png?v=87","/icon-maskable-512.png?v=87","/apple-touch-icon.png?v=87","/logo-header.png?v=87","/event-ecosystem-flow.js?v=87","/account-route-fix-flow.js?v=87","/production-truth-gate-flow.js?v=87","/production-guard-flow.js?v=87","/route-loader-flow.js?v=88"];
+const SHELL=["/","/assets/index-v87.js","/assets/index-v87.css","/manifest.webmanifest?v=87","/icon-192.png?v=87","/icon-512.png?v=87","/icon-maskable-512.png?v=87","/apple-touch-icon.png?v=87","/logo-header.png?v=87","/event-ecosystem-flow.js?v=87","/account-route-fix-flow.js?v=87","/production-truth-gate-flow.js?v=87","/production-guard-flow.js?v=87","/route-loader-flow.js?v=89","/logout-hotfix-flow.js?v=89"];
 self.addEventListener("install",event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)))});
 self.addEventListener("activate",event=>{event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>![CACHE,DIRECTORY_CACHE].includes(key)).map(key=>caches.delete(key)));await self.clients.claim()})())});
 async function cacheFirst(request){const cache=await caches.open(CACHE),hit=await cache.match(request);if(hit)return hit;const response=await fetch(request,{cache:"no-store"});if(response.ok)cache.put(request,response.clone());return response}
