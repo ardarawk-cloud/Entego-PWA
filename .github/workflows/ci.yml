@@ -75,14 +75,17 @@ jobs:
           bundle=Path('dist/assets/index.js').read_text()
           required=[
               'ENTEGO PROFESSIONAL PARTNER',
+              'Talent',
+              'Production',
+              'Services',
+              'Organizer',
               'Event Organizer',
               'Wedding Organizer',
               'Party Planner',
               'Corporate Event Planner',
+              'Venue',
               'Venue Lainnya',
-              'Cari DJ, EO, WO, venue, sound...',
               'Event Ecosystem Platform',
-              'Menu Layanan & Harga',
           ]
           missing=[x for x in required if x not in bundle]
           if missing:
