@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      ENTEGO_VERSION_NAME: '1.0.5'
+      ENTEGO_VERSION_NAME: '1.0.6'
       ENTEGO_KEYSTORE_B64: ${{ secrets.ENTEGO_ANDROID_KEYSTORE_B64 }}
       ENTEGO_KEY_ALIAS: ${{ secrets.ENTEGO_ANDROID_KEY_ALIAS }}
       ENTEGO_STORE_PASSWORD: ${{ secrets.ENTEGO_ANDROID_STORE_PASSWORD }}
@@ -61,12 +61,16 @@ jobs:
           set -euo pipefail
           test -f dist/index.html
           test -f dist/event-ecosystem-flow.js
+          test -f dist/service-menu-flow.js
           test -f dist/partner-category-flow.js
           test -f dist/identity-center-flow.js
           test -f dist/identity-submit-hotfix-flow.js
           test -f dist/native-runtime-flow.js
           test -f dist/native-identity-camera-flow.js
           grep -Fq "ENTEGO_EVENT_ECOSYSTEM_VERSION='2.0'" dist/event-ecosystem-flow.js
+          grep -Fq "ENTEGO_SERVICE_MENU_VERSION='1.1'" dist/service-menu-flow.js
+          grep -Fq "ENTEGO_MIN_SERVICE_PRICE=1000000" dist/service-menu-flow.js
+          grep -Fq "MIN_SERVICE_PRICE=1000000" partner-api.js
           grep -Fq "Event Organizer" dist/partner-category-flow.js
           grep -Fq "Wedding Organizer" dist/partner-category-flow.js
           grep -Fq "Event Ecosystem Platform" dist/index.html
@@ -168,6 +172,8 @@ jobs:
             echo "versionCode=${ENTEGO_VERSION_CODE}"
             echo "applicationId=com.ardacore.entego"
             echo "foundation=event-ecosystem-v2"
+            echo "partnerServiceMenu=1.1"
+            echo "minimumServicePrice=1000000"
             echo "signing=${SIGNING}"
             echo "updatePolicy=same-package-same-signing-key-higher-versionCode"
             echo "debugApkForUsers=false"
@@ -179,10 +185,10 @@ jobs:
         if: ${{ env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.5-STABLE-UPDATEABLE
+          name: ENTEGO-Android-v1.0.6-STABLE-UPDATEABLE
           path: |
-            stable-out/ENTEGO-Android-v1.0.5-stable.apk
-            stable-out/ENTEGO-Android-v1.0.5-stable.aab
+            stable-out/ENTEGO-Android-v1.0.6-stable.apk
+            stable-out/ENTEGO-Android-v1.0.6-stable.aab
             stable-out/signing-certificate.txt
             stable-out/build-info.txt
             stable-out/SHA256SUMS.txt
@@ -193,10 +199,10 @@ jobs:
         if: ${{ !(env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '') }}
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.5-PROTECTED-SIGNING-CANDIDATE
+          name: ENTEGO-Android-v1.0.6-PROTECTED-SIGNING-CANDIDATE
           path: |
-            stable-out/ENTEGO-Android-v1.0.5-stable-aligned-unsigned.apk
-            stable-out/ENTEGO-Android-v1.0.5-stable-unsigned.aab
+            stable-out/ENTEGO-Android-v1.0.6-stable-aligned-unsigned.apk
+            stable-out/ENTEGO-Android-v1.0.6-stable-unsigned.aab
             stable-out/apksigner.jar
             stable-out/build-info.txt
             stable-out/SHA256SUMS.txt
