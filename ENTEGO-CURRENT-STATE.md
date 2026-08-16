@@ -1,6 +1,6 @@
 # ENTEGO CURRENT STATE
 
-Checkpoint: 2026-08-16 / Event Ecosystem v3 / Android v1.0.8
+Checkpoint: 2026-08-17 / Event Ecosystem v3 / Android v1.0.9
 Owner / Final Authority: Arda
 Startup command: `KAI ENTEGO START`
 Status: LAST VERIFIED SAFE POINT
@@ -8,8 +8,8 @@ Status: LAST VERIFIED SAFE POINT
 ## Current Phase
 ENTEGO remains in **Phase 1 — Marketplace / Enabler** plus Google Play maturity preparation.
 
-Current verified Android distribution baseline: **v1.0.8 — Discovery, Multi-Service & Marketing Foundation**.
-Target after Play-readiness P0/P1 gates remain complete: **v1.1.0 Play Production Candidate**.
+Current verified Android distribution baseline: **v1.0.9 — Home Override + Logo Hard Lock**.
+Target after Play-readiness P0/P1 gates are complete remains: **v1.1.0 Play Production Candidate**.
 
 ## Official Foundation Files
 - `ENTEGO-BUSINESS-FOUNDATION.md`
@@ -57,6 +57,39 @@ Visual rule:
 - monochrome black/dark default
 - avoid generic repeated icons across unrelated categories
 
+## Home v1.0.9 — CORE OVERRIDE / VERIFIED
+The previous Home visually remained too close to the legacy large-hero shell even after taxonomy updates. v1.0.9 fixes this at the **core Vite bundle renderer**, not by a cosmetic overlay.
+
+Current Home structure:
+- ENTEGO master logo preserved in top bar
+- compact premium Event Ecosystem hero
+- CTA `Jelajahi Layanan` and `Daftar Mitra`
+- trust markers: Verified Partner / ENTEGO Protection / Secure Booking
+- `Jelajahi Kategori` displayed prominently on Home
+- premium 3×3 category grid for all 9 main categories
+- category-specific monochrome SVG icons
+- `Layanan Populer`: DJ, MUA, Sound System, Photographer, Wedding Organizer, Villa
+
+Core markers:
+- `globalThis.ENTEGO_HOME_VERSION="1.0.9"`
+- `globalThis.ENTEGO_CORE_CATALOG_VERSION="3.1"`
+- asset generation `v87`
+- service worker cache `entego-v87`
+
+## Logo Hard Lock — VERIFIED
+Arda explicitly requires the original/master ENTEGO pin-play logo to remain stable across updates.
+
+Current authoritative asset:
+- `logo-header.png`
+
+v1.0.9 safeguards:
+- core bundle references `/logo-header.png?v=87`
+- static shell contains explicit `ENTEGO_LOGO_LOCK='/logo-header.png?v=87'`
+- service worker precaches `/logo-header.png?v=87`
+- final Android APK contains `assets/public/logo-header.png`
+
+Do not replace the master logo with fallback/generic branding unless Arda explicitly revises it.
+
 ## Multi-Service Partner Model — IMPLEMENTED
 Hard model:
 `1 Partner Account → 1 Business Profile → Primary Service → Many Services Offered → Many Service Menu Items / Prices`
@@ -73,7 +106,6 @@ Implementation:
 - `server-partner-flow.js` sends `services[]` with partner profile
 - `partner-store-v3.js` persists `services_json`
 - directory search can match primary category OR additional services
-- selected customer service is passed to `/api/directory?category=...`
 - public/directory partner remains one business identity
 
 ## Menu Layanan & Harga — IMPLEMENTED
@@ -99,38 +131,34 @@ Rules:
 - category-specific floors are not locked yet.
 
 ## ENTEGO Marketing v1.0 — FOUNDATION IMPLEMENTED
-Three product directions are locked:
+Three directions are locked:
 1. **ENTEGO Boost** — paid/sponsored visibility for selected service + relevant area.
-2. **ENTEGO Promo** — partner-funded promotion on a service-menu item; final price must remain >= active price floor.
+2. **ENTEGO Promo** — partner-funded promotion; final price must remain >= active price floor.
 3. **ENTEGO Campaign** — ENTEGO-created thematic campaigns.
 
 Trust firewall:
 - Sponsored placement must be clearly labelled.
-- Verified badge is not for sale.
-- KYC approval is not for sale.
-- rating/reviews are not for sale.
+- Verified/KYC/rating/reviews are not for sale.
 - paid visibility must not silently replace organic quality/relevance.
 
-Current APK implementation is **foundation/draft UX only**. It does not falsely activate or charge paid Boost before ENTEGO billing/campaign activation exists.
+Current implementation is foundation/draft UX only. It does not falsely charge or activate paid Boost before ENTEGO billing exists.
 
-Implementation marker:
-- `partner-marketing-flow.js` → `ENTEGO_MARKETING_VERSION='1.0'`
-
-## Android v1.0.8 — VERIFIED
-GitHub Actions run: `31953989977` — SUCCESS
-Build commit: `90ffc58557ee94d684e37bd8bc9e77bc83b44ef0`
-Protected candidate artifact: `9265468382`
+## Android v1.0.9 — VERIFIED
+GitHub Actions run: `31958114963` — SUCCESS
+Build commit: `a33396643b3e4ce3afb9c5b3cd227f0c292a3534`
+Protected candidate artifact: `9266533610`
 
 Android identity:
 - applicationId: `com.ardacore.entego` — HARD LOCK
-- versionName: `1.0.8`
-- versionCode: `120079`
+- versionName: `1.0.9`
+- versionCode: `130087`
 - target SDK: API 36
-- asset generation/cache: v86
+- asset/cache generation: `v87`
 
-Update-chain note:
-- v1.0.7 Core Catalog Fix used versionCode `110001`.
-- v1.0.8 moved to the `120xxx` versionCode range so it can update over the current stable chain.
+Update chain:
+- v1.0.7 Core Catalog Fix: versionCode `110001`
+- v1.0.8: versionCode `120079`
+- v1.0.9: versionCode `130087`
 
 Private final signing verification:
 - APK Signature v1: false
@@ -141,17 +169,21 @@ Private final signing verification:
 - signer matches the existing ENTEGO stable sideload/update identity.
 
 Final produced files:
-- `ENTEGO-Android-v1.0.8-STABLE-UPDATEABLE.apk`
-- `ENTEGO-Android-v1.0.8-PLAY-UPLOAD.aab`
+- `ENTEGO-Android-v1.0.9-STABLE-UPDATEABLE.apk`
+- `ENTEGO-Android-v1.0.9-PLAY-UPLOAD.aab`
 
-APK content gates verified directly inside the final APK:
-- core asset `assets/public/assets/index-v86.js`
-- Event Ecosystem v3 flow present
-- MUA + 9-category taxonomy present
-- category filtering markers present
-- multi-service onboarding present
-- Marketing foundation present
-- legacy core catalog not accepted by CI
+Final APK was inspected directly after signing and verified to contain:
+- `assets/public/assets/index-v87.js`
+- `assets/public/index.html`
+- `assets/public/logo-header.png`
+- `assets/public/sw.js`
+- Home marker `globalThis.ENTEGO_HOME_VERSION="1.0.9"`
+- `Jelajahi Kategori`
+- core logo reference `/logo-header.png?v=87`
+- service worker cache `entego-v87`
+- static explicit logo lock
+
+Therefore the Home redesign and master logo are confirmed inside the actual distributed APK, not merely in source code.
 
 ## KYC / Identity
 - supported identity types: KTP, SIM, PASSPORT
@@ -171,24 +203,25 @@ P0 remains:
 6. permanent reviewer/demo access and sign-in instructions
 7. Android permission audit
 8. payment-policy review for future digital products
-9. Play declarations including Financial Features declaration
+9. required Play declarations
 
-Do **not** call v1.0.8 a Play Production Candidate. It is the latest stable product-development baseline.
+Do **not** call v1.0.9 a Play Production Candidate. It is the latest stable product-development baseline.
 
 ## Last Safe Point
 - Event Ecosystem v3 taxonomy locked and implemented.
 - MUA included.
-- premium monochrome category icon direction locked and implemented in discovery flow.
+- premium monochrome category icon direction locked.
+- Home redesigned at core bundle level with 3×3 category grid.
+- master ENTEGO logo hard-locked and verified inside final APK.
 - `Semua` / category-specific filtering implemented.
 - one partner can persist and expose multiple services.
-- partner directory can match additional services.
 - Menu Layanan & Harga remains active.
 - Rp1.000.000 pricing floor remains active client + server.
-- ENTEGO Marketing Boost / Promo / Campaign foundation is locked and present as non-billing draft UX.
-- Android v1.0.8 built, content-gated, privately signed, and verified in the stable update chain.
+- Boost / Promo / Campaign marketing foundation remains active as non-billing draft UX.
+- Android v1.0.9 built, content-gated, privately signed, and verified in the stable update chain.
 - Phase 2 Package Builder remains future.
 - Phase 3 Managed Events remains future and requires explicit Arda approval.
 - next major maturity work remains Privacy Policy + Account Deletion + Data Safety, then full Android QA and store assets.
 
 ## Continuity Instruction
-On `KAI ENTEGO START`, boot only ENTEGO, read this Current State plus the official foundation/policy files, inspect current `main`, and continue from this Last Safe Point. Do not mix other ACC projects into ENTEGO. Do not invent missing state; mark unknown/conflict and resolve from repository/current state before changing production.
+On `KAI ENTEGO START`, boot only ENTEGO, read this Current State plus official foundation/policy files, inspect current `main`, and continue from this Last Safe Point. Do not mix other ACC projects into ENTEGO. Do not invent missing state; mark unknown/conflict and resolve from repository/current state before changing production.
