@@ -2,6 +2,8 @@ const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status
 const clean=(v,max=500)=>String(v??'').trim().slice(0,max);
 const store=env=>env.ENT_PARTNER.getByName('entego-partners-production');
 const requirePartner=user=>user&&['partner','admin'].includes(user.role);
+const MIN_SERVICE_PRICE=1000000;
+const belowFloor=v=>{const n=Math.max(0,Math.round(Number(v)||0));return n>0&&n<MIN_SERVICE_PRICE};
 export async function handlePartnerApi(request,env,user){
  const url=new URL(request.url),path=url.pathname,method=request.method,s=store(env);
  if(path==='/api/directory'&&method==='GET'){
@@ -14,12 +16,12 @@ export async function handlePartnerApi(request,env,user){
  if(path==='/api/partner/me/profile'){
   if(!requirePartner(user))return json({ok:false,error:'partner_required'},403);
   if(method==='GET')return json({ok:true,profile:await s.getProfile(user.id)});
-  if(method==='PUT'){const body=await request.json().catch(()=>({}));try{return json({ok:true,profile:await s.saveProfile(user.id,body,user.verified)},200)}catch(e){return json({ok:false,error:String(e.message)==='PROFILE_REQUIRED'?'PROFILE_REQUIRED':'partner_server_error'},400)}}
+  if(method==='PUT'){const body=await request.json().catch(()=>({}));if(belowFloor(body.price))return json({ok:false,error:'minimum_service_price',minimumPrice:MIN_SERVICE_PRICE},400);try{return json({ok:true,profile:await s.saveProfile(user.id,body,user.verified)},200)}catch(e){return json({ok:false,error:String(e.message)==='PROFILE_REQUIRED'?'PROFILE_REQUIRED':'partner_server_error'},400)}}
  }
  if(path==='/api/partner/me/packages'){
   if(!requirePartner(user))return json({ok:false,error:'partner_required'},403);
   if(method==='GET')return json({ok:true,packages:await s.getPackages(user.id)});
-  if(method==='PUT'){const body=await request.json().catch(()=>({}));return json({ok:true,packages:await s.savePackages(user.id,Array.isArray(body.packages)?body.packages:[])})}
+  if(method==='PUT'){const body=await request.json().catch(()=>({})),items=Array.isArray(body.packages)?body.packages:[];if(items.some(x=>belowFloor(x?.price)))return json({ok:false,error:'minimum_service_price',minimumPrice:MIN_SERVICE_PRICE},400);return json({ok:true,packages:await s.savePackages(user.id,items)})}
  }
  if(path==='/api/partner/me/availability'){
   if(!requirePartner(user))return json({ok:false,error:'partner_required'},403);
