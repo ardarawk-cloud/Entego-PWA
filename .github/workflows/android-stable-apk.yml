@@ -68,11 +68,31 @@ jobs:
           test -f dist/identity-submit-hotfix-flow.js
           test -f dist/native-runtime-flow.js
           test -f dist/native-identity-camera-flow.js
-          grep -Fq 'ENTEGO_CORE_CATALOG_VERSION' dist/assets/index.js
-          grep -Fq 'ENTEGO PROFESSIONAL PARTNER' dist/assets/index.js
-          grep -Fq 'Event Organizer' dist/assets/index.js
-          grep -Fq 'Wedding Organizer' dist/assets/index.js
-          grep -Fq 'Corporate Event Planner' dist/assets/index.js
+          python3 <<'PY'
+          from pathlib import Path
+          bundle=Path('dist/assets/index.js').read_text()
+          required=[
+              'ENTEGO PROFESSIONAL PARTNER',
+              'Event Organizer',
+              'Wedding Organizer',
+              'Corporate Event Planner',
+              'Venue Lainnya',
+              'Cari DJ, EO, WO, venue, sound...',
+              'Event Ecosystem Platform',
+              'Menu Layanan & Harga',
+          ]
+          missing=[x for x in required if x not in bundle]
+          if missing:
+              print('CORE CATALOG VERIFY FAILED')
+              print('Missing from dist/assets/index.js:', missing)
+              raise SystemExit(1)
+          legacy=['["Entertainment",["DJ","MC","Live Band","Singer"]]','price:900000']
+          found=[x for x in legacy if x in bundle]
+          if found:
+              print('LEGACY CORE MARKERS STILL PRESENT:', found)
+              raise SystemExit(1)
+          print('CORE CATALOG VERIFIED: Talent / Production / Services / Organizer / Venue')
+          PY
           grep -Fq "ENTEGO_EVENT_ECOSYSTEM_VERSION='2.0'" dist/event-ecosystem-flow.js
           grep -Fq "ENTEGO_SERVICE_MENU_VERSION='1.1'" dist/service-menu-flow.js
           grep -Fq "ENTEGO_MIN_SERVICE_PRICE=1000000" dist/service-menu-flow.js
