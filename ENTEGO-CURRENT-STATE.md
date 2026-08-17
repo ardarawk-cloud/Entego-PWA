@@ -1,6 +1,6 @@
 # ENTEGO CURRENT STATE
 
-Checkpoint: 2026-08-17 / Event Ecosystem v3 / Android v1.0.11
+Checkpoint: 2026-08-17 / Event Ecosystem v3 / Android v1.0.12
 Owner / Final Authority: Arda
 Startup command: `KAI ENTEGO START`
 Status: LAST VERIFIED SAFE POINT
@@ -8,15 +8,8 @@ Status: LAST VERIFIED SAFE POINT
 ## Current Phase
 ENTEGO remains in **Phase 1 — Marketplace / Enabler** plus Google Play maturity preparation.
 
-Current verified Android distribution baseline: **v1.0.11 — Logout Reliability + Partner Checkbox Alignment**.
+Current verified Android distribution baseline: **v1.0.12 — Account Role UX + Home Copy Polish**.
 Target after Play-readiness P0/P1 gates are complete remains: **v1.1.0 Play Production Candidate**.
-
-## Official Foundation Files
-- `ENTEGO-BUSINESS-FOUNDATION.md`
-- `ENTEGO-PRICING-POLICY.md`
-- `ENTEGO-SERVICE-TAXONOMY.md`
-- `ENTEGO-MARKETING-POLICY.md`
-- `ANDROID-UPDATE-POLICY.md`
 
 ## Product Identity
 **ENTEGO — Event Ecosystem Platform**
@@ -31,7 +24,14 @@ Phase model:
 
 EO/WO remain Professional Partners first. ENTEGO must not use Phase 1 to systematically disintermediate organizer partners.
 
-## Service Taxonomy v1.0 — LOCKED
+## Official Foundation Files
+- `ENTEGO-BUSINESS-FOUNDATION.md`
+- `ENTEGO-PRICING-POLICY.md`
+- `ENTEGO-SERVICE-TAXONOMY.md`
+- `ENTEGO-MARKETING-POLICY.md`
+- `ANDROID-UPDATE-POLICY.md`
+
+## Service Taxonomy — LOCKED
 Customer discovery uses 9 main categories:
 1. Talent
 2. Production
@@ -43,150 +43,181 @@ Customer discovery uses 9 main categories:
 8. Rental & Transport
 9. Decoration & Event Support
 
-`MUA` is officially included under **Beauty & Styling**.
+`MUA` is officially under **Beauty & Styling**.
 
 Discovery behavior:
 - `Semua` shows all service types.
-- selecting one main category shows only service types belonging to that category.
-- selecting a service type discovers partners whose primary service OR additional services include that service.
+- selecting one main category shows only its service types.
+- selecting a service discovers partners whose primary OR additional services include it.
+- category is a discovery tool, not an account boundary.
 
 Visual rule:
-- category icons are a primary face of the APK
-- relevant category-specific icons
-- premium consistent icon family
-- monochrome black/dark default
-- avoid generic repeated icons across unrelated categories
-
-## Home v1.0.9 — CORE OVERRIDE / RETAINED
-Current Home remains the v1.0.9 core design:
-- ENTEGO master logo preserved in top bar
-- compact Event Ecosystem hero
-- CTA `Jelajahi Layanan` / `Daftar Mitra`
-- trust markers
-- `Jelajahi Kategori` 3×3 grid
-- category-specific monochrome icons
-- `Layanan Populer`
-
-Core markers retained in v1.0.11:
-- `globalThis.ENTEGO_HOME_VERSION="1.0.9"`
-- `globalThis.ENTEGO_CORE_CATALOG_VERSION="3.1"`
-- core asset generation `v87`
-
-## Logo Hard Lock — VERIFIED
-Authoritative asset: `logo-header.png`.
-
-Rules:
-- original/master ENTEGO pin-play logo must remain stable across updates
-- do not replace with fallback/generic branding unless Arda explicitly revises it
-- v1.0.11 retains `/logo-header.png?v=87`
-- final v1.0.11 APK directly verified to contain `assets/public/logo-header.png`
+- category icons are a primary face of the APK.
+- use relevant category-specific icons.
+- premium consistent icon family.
+- monochrome black/dark default.
+- avoid generic repeated icons across unrelated categories.
+- category labels use Title Case.
 
 ## Multi-Service Partner Model — IMPLEMENTED
 Hard model:
 `1 Partner Account → 1 Business Profile → Primary Service → Many Services Offered → Many Service Menu Items / Prices`
 
-Category is a discovery tool, not an account boundary.
-
-Example: Mr Brown Sound System may keep one account while offering Sound System + Lighting + DJ Equipment/CDJ + LED + Stage + Genset.
+Example: Mr Brown Sound System can keep one profile while offering Sound System + Lighting + DJ Equipment/CDJ + LED + Stage + Genset.
 
 Implementation:
-- `partner-category-flow.js` now `ENTEGO_PARTNER_CATEGORY_VERSION='2.1'`
-- `entego_partner_services` stores additional selected services
-- backend `services_json` persists multi-service profile data
-- customer directory can match primary or additional services
-
-### Partner checkbox UI v2.1
-Arda reported the Android multi-service checkbox grid looked zigzag when labels had different lengths.
-
-v1.0.11 fixes this using fixed checkbox/text columns and equal-height service cards:
-- two-column service grid
-- each row uses `grid-template-columns:20px minmax(0,1fr)`
-- minimum row height `48px`
-- checkbox fixed to 18×18 px and vertically centered
-- long service names wrap without shifting checkbox position
+- `partner-category-flow.js` → `ENTEGO_PARTNER_CATEGORY_VERSION='2.1'`
+- selected services stored in `entego_partner_services`
+- backend persists `services_json`
+- directory can match primary or additional services
+- checkbox UI uses fixed columns/equal-height rows so long labels do not create zigzag alignment
 
 ## Menu Layanan & Harga — IMPLEMENTED
-Each partner may create multiple customer-facing menu items with independent name, scope/duration, description, price, and featured state.
+Each partner may create multiple customer-facing service menu items with independent name, scope/duration, description, price, and featured state.
 
-Examples approved by Arda:
+Approved examples:
 - Wedding After Party — Rp3.000.000
 - Wedding Full Ceremony — Rp6.000.000
 - Club — Rp2.000.000
 - Beach Club — Rp1.500.000
 
 ## ENTEGO Pricing Floor — HARD LOCK
-Current minimum positive active customer-facing service price: **Rp1.000.000**.
+Minimum positive active customer-facing service price: **Rp1.000.000**.
 
 Rules:
-- Rp0 only means unset/not-yet-priced
-- positive starting price below Rp1.000.000 is rejected
-- menu/package price below Rp1.000.000 is rejected
-- client + server enforce the floor
-- partner remains free to price above the floor
+- Rp0 only means unset/not-yet-priced.
+- positive starting/menu price below Rp1.000.000 is rejected.
+- client + server enforce the floor.
+- partner remains free to price above the floor.
 
-## ENTEGO Marketing v1.0 — FOUNDATION IMPLEMENTED
+## ENTEGO Marketing — FOUNDATION IMPLEMENTED
 Directions:
 1. ENTEGO Boost
 2. ENTEGO Promo
 3. ENTEGO Campaign
 
 Trust firewall:
-- Sponsored placement must be labelled
-- Verified/KYC/rating/reviews are not for sale
-- paid visibility must not silently replace organic quality/relevance
-- current implementation remains foundation/draft UX only; no fake paid billing
+- Sponsored placement must be labelled.
+- Verified/KYC/rating/reviews are not for sale.
+- paid visibility must not silently replace organic quality/relevance.
+- current implementation remains foundation/draft UX only; no fake paid billing.
 
-## KYC / Identity v1.0.10 — RETAINED
-The v1.0.10 KYC last-4 fix remains active in v1.0.11:
-- KTP, SIM, PASSPORT supported
-- private KYC media storage
-- exact 4-character identity suffix / 4-digit bank suffix requirements
+## Home + Logo — VERIFIED
+Home core remains based on v1.0.9 architecture with the master ENTEGO logo, Event Ecosystem hero, CTA, trust markers, 3×3 category grid, category-specific monochrome icons, and popular services.
+
+### v1.0.12 copy polish
+Arda requested the hero wording and category capitalization be refined.
+
+Current headline:
+**`Semua Kebutuhan Event, Satu Aplikasi`**
+
+Rules:
+- headline uses capitalized words but remains visually restrained, not oversized.
+- runtime target around `clamp(24px,7vw,28px)`.
+- category names use Title Case.
+- `home-copy-flow.js` marker: `ENTEGO_HOME_COPY_VERSION='1.0'`.
+
+### Logo Hard Lock
+Authoritative asset: `logo-header.png`.
+
+Do not replace, remove, or fall back to generic branding unless Arda explicitly revises it.
+Current APK retains `assets/public/logo-header.png` and `/logo-header.png?v=87` references.
+
+## Account Role UX v1.0.12 — IMPLEMENTED
+Account menu is role-aware and authenticated-only.
+
+Logged out:
+- Account page should show Login/Register flow, not customer financial/account utility rows.
+
+Customer after login:
+- Riwayat Transaksi
+- Metode Pembayaran
+- Alamat Tersimpan
+- Voucher & Promo
+- ENTEGO Wallet — CONDITIONAL, see hard Wallet rule below
+- Jadi Mitra ENTEGO
+- Pengaturan
+- Bantuan & Keamanan
+
+Partner after login:
+- Dashboard Mitra
+- Order & Riwayat
+- Pengaturan
+- Bantuan & Keamanan
+
+Admin after login:
+- Admin Control Center
+- Pengaturan
+- Bantuan & Keamanan
+
+Visual rule:
+- each account function uses a relevant, distinct monochrome SVG icon.
+- do not reuse the generic sparkle icon for unrelated account functions.
+
+Future account utilities that do not yet have production backends (e.g. saved address/voucher/settings/wallet ledger) must show a controlled ENTEGO notice rather than navigating to a broken/unknown route.
+
+## Customer Wallet Identity Gate — HARD LOCK
+Arda explicitly requires:
+> **ENTEGO Wallet for a Customer only appears after the Customer has completed identity verification and that verification is approved.**
+
+Important distinction:
+- generic auth field `user.verified` MUST NOT be used as Customer KYC proof.
+- current auth registration can mark customer accounts verified for normal account purposes; this is not identity/KYC approval.
+- Wallet requires a dedicated Customer identity/KYC approved status.
+- UI visibility is currently gated by the dedicated cache/status concept `entego_customer_identity_status_cache === 'approved'`.
+- Wallet backend/ledger is NOT active yet, so no fake balance or financial operation may be exposed.
+- security enforcement for a future live Wallet must be server-side; local UI state alone is never sufficient.
+
+### Current limitation / next required feature
+Existing `identity-api.js` is partner-oriented and includes payout/bank requirements. A dedicated Customer KYC flow/backend is **not yet implemented**. Therefore normal Customer accounts in v1.0.12 do not automatically gain Wallet access; Wallet remains hidden until the dedicated Customer ID verification system is built and approved.
+
+## KYC / Identity — PARTNER FLOW RETAINED
+Partner KYC remains:
+- KTP, SIM, PASSPORT
+- private identity document + selfie storage
+- payout eligibility requires approved verification
+- no full ID/account number in metadata form
 - `IDENTITY_SUBMIT_HOTFIX_VERSION='79'`
-- placeholder `Masukkan 4 digit terakhir`
-- field-specific validation/focus
-- unfinished KYC draft preserved across camera/re-render via session storage
-- full identity number and full bank account number remain rejected from metadata form
+- explicit last-4 validation
+- draft persistence across camera/re-render
 
-## Logout Reliability v1.0.11 — VERIFIED
-Arda supplied an Android reproduction video where tapping `Keluar` visually pressed the button but the Account screen remained logged in.
+## Logout Reliability — RETAINED
+`logout-hotfix-flow.js` marker `ENTEGO_LOGOUT_HOTFIX_VERSION='1.1'` remains active:
+- delegated logout handler survives Account DOM re-render
+- local auth state clears immediately
+- stale auth rehydrate cannot immediately restore logged-out UI
+- server `/api/auth/logout` is still attempted
+- intentional Login/Register releases the logout guard
 
-Server logout already existed, but client logout depended on a direct handler attached to a specific Account-panel DOM instance. Re-render/stale auth refresh could make the logout transition unreliable.
+## Delivery / Cache Generation v90
+v1.0.12 uses:
+- `route-loader-flow.js` → `RL_VERSION='90'`
+- service worker cache → `entego-v90`
+- directory cache → `entego-directory-v90`
+- boot version → `90`
+- Home copy module → v90
+- Account Role UX module → v90
 
-v1.0.11 adds defense-in-depth client logout:
-- `logout-hotfix-flow.js`
-- marker `ENTEGO_LOGOUT_HOTFIX_VERSION='1.1'`
-- delegated capture-level handler catches `#entegoLogout` even after panel re-render
-- local account state is cleared immediately
-- `entego_force_logged_out` blocks stale auth rehydrate from restoring the just-logged-out panel
-- `/api/auth/logout` is still attempted with credentials to invalidate the server session/cookie
-- route moves to Home via `location.replace`
-- intentional Login/Register clears the logout guard so users can sign in again normally
-
-Delivery generation:
-- `route-loader-flow.js` → `RL_VERSION='89'`
-- service worker cache → `entego-v89`
-- directory cache → `entego-directory-v89`
-- logout hotfix is loaded globally and explicitly included in the shell
-
-## Android v1.0.11 — VERIFIED
-GitHub Actions run: `31962051364` — SUCCESS
-Build commit: `24fbe80fb280edee79193f32097fe3b6be7977c7`
-Protected candidate artifact: `9267520255`
+## Android v1.0.12 — VERIFIED
+GitHub Actions run: `32019743662` — SUCCESS
+Build commit: `1cd1a85b35c4ec56d38913387e9ef1e6afbec025`
+Protected candidate artifact: `9284958446`
 
 Android identity:
 - applicationId: `com.ardacore.entego` — HARD LOCK
-- versionName: `1.0.11`
-- versionCode: `130091`
+- versionName: `1.0.12`
+- versionCode: `130101`
 - target SDK: API 36
-- Home/core asset generation: `v87`
-- auth/UI/lazy-loader/service-worker generation: `v89`
+- Home/core asset generation: v87
+- account/home/lazy-loader/service-worker generation: v90
 
 Update chain:
-- v1.0.7: versionCode `110001`
+- v1.0.7: `110001`
 - v1.0.8: `120079`
 - v1.0.9: `130087`
 - v1.0.10: `130089`
 - v1.0.11: `130091`
+- v1.0.12: `130101`
 
 Private final signing verification:
 - APK Signature v1: false
@@ -197,16 +228,21 @@ Private final signing verification:
 - signer matches existing ENTEGO stable sideload/update identity
 - AAB jarsigner verification passed
 
-Final produced files:
-- `ENTEGO-Android-v1.0.11-STABLE-UPDATEABLE.apk`
-- `ENTEGO-Android-v1.0.11-PLAY-UPLOAD.aab`
+Final files:
+- `ENTEGO-Android-v1.0.12-STABLE-UPDATEABLE.apk`
+- `ENTEGO-Android-v1.0.12-PLAY-UPLOAD.aab`
 
-Final APK directly inspected after signing and verified to contain:
-- `assets/public/logout-hotfix-flow.js` with logout v1.1
-- `assets/public/partner-category-flow.js` with UI v2.1 and aligned checkbox grid
-- `assets/public/route-loader-flow.js` with `RL_VERSION='89'`
-- `assets/public/sw.js` with `entego-v89`
-- `assets/public/assets/index-v87.js` with Home v1.0.9 marker
+Final APK directly inspected and verified to contain:
+- `assets/public/account-role-ux-flow.js`
+- `ENTEGO_ACCOUNT_ROLE_UX_VERSION='1.0'`
+- Customer Wallet identity-approved visibility gate
+- role-specific Customer / Partner / Admin menu copy
+- distinct monochrome account icons
+- `assets/public/home-copy-flow.js`
+- headline `Semua Kebutuhan Event, Satu Aplikasi`
+- `assets/public/route-loader-flow.js` with `RL_VERSION='90'`
+- `assets/public/sw.js` with `entego-v90`
+- `assets/public/assets/index-v87.js`
 - `assets/public/logo-header.png`
 
 ## Google Play Readiness — NOT YET COMPLETE
@@ -223,24 +259,26 @@ P0 remains:
 8. payment-policy review for future digital products
 9. required Play declarations
 
-Do **not** call v1.0.11 a Play Production Candidate. It is the current stable product-development baseline.
+Do **not** call v1.0.12 a Play Production Candidate. It is the current stable product-development baseline.
 
 ## Last Safe Point
-- Event Ecosystem v3 taxonomy locked and implemented
-- MUA / EO / WO included
-- Home v1.0.9 retained
-- master ENTEGO logo hard-locked and verified in final APK
-- category-specific discovery and multi-service partners active
-- Partner checkbox layout fixed/aligned in v2.1
-- Menu Layanan & Harga active
-- Rp1.000.000 price floor active client + server
-- Marketing Boost / Promo / Campaign foundation retained
-- KYC v79 retained
-- Logout reliability hotfix v1.1 added and packaged
-- Android v1.0.11 built, content-gated, privately signed, and verified in stable update chain
-- Phase 2 Package Builder remains future
-- Phase 3 Managed Events remains future and requires explicit Arda approval
-- next major maturity work remains Privacy Policy + Account Deletion + Data Safety, then full Android QA/store assets
+- Event Ecosystem v3 taxonomy locked and implemented.
+- MUA / EO / WO included.
+- multi-service partner model active.
+- Partner checkbox UI aligned in v2.1.
+- Menu Layanan & Harga active.
+- Rp1.000.000 price floor active client + server.
+- Marketing Boost / Promo / Campaign foundation retained.
+- Home headline capitalization and category Title Case polished.
+- master ENTEGO logo hard-locked and verified.
+- authenticated role-aware Account UX added.
+- Customer Wallet hard-locked behind dedicated Customer identity/KYC approval and remains hidden by default until that system exists.
+- Partner KYC v79 retained.
+- Logout reliability v1.1 retained.
+- Android v1.0.12 built, content-gated, privately signed, and verified in stable update chain.
+- Phase 2 Package Builder remains future.
+- Phase 3 Managed Events remains future and requires explicit Arda approval.
+- next maturity work: dedicated Customer KYC architecture if Wallet is prioritized, plus Play Privacy Policy + Account Deletion + Data Safety.
 
 ## Continuity Instruction
 On `KAI ENTEGO START`, boot only ENTEGO, read this Current State plus official foundation/policy files, inspect current `main`, and continue from this Last Safe Point. Do not mix other ACC projects into ENTEGO. Do not invent missing state; mark unknown/conflict and resolve from repository/current state before changing production.
