@@ -1,9 +1,10 @@
-const ENTEGO_ACCOUNT_ROLE_UX_VERSION='1.0';
+const ENTEGO_ACCOUNT_ROLE_UX_VERSION='1.1';
 const ARU_ROUTE=()=>localStorage.getItem('entego_route')||'home';
 const aruUser=()=>{try{return JSON.parse(localStorage.getItem('entego_auth_user')||'null')}catch{return null}};
-const aruEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]));
+const aruEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const CUSTOMER_IDENTITY_CACHE_KEY='entego_customer_identity_status_cache';
 const customerIdentityApproved=()=>localStorage.getItem(CUSTOMER_IDENTITY_CACHE_KEY)==='approved';
+const FUTURE_ACCOUNT_ROUTES=new Set(['addresses','vouchers','settings','wallet']);
 
 function aruIcon(name){
  const common='viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
@@ -26,21 +27,26 @@ function aruMenuRow(icon,title,sub,route,badge=''){
  return `<button type="button" class="aru-row" ${route?`data-route="${route}"`:''}><span class="aru-icon">${aruIcon(icon)}</span><span class="aru-copy"><b>${aruEsc(title)}</b>${sub?`<small>${aruEsc(sub)}</small>`:''}</span>${badge?`<span class="aru-badge">${aruEsc(badge)}</span>`:''}<span class="aru-arrow">›</span></button>`;
 }
 
+function aruNotice(title,message){
+ let overlay=document.querySelector('#entegoAccountRoleNotice');overlay?.remove();
+ overlay=document.createElement('div');overlay.id='entegoAccountRoleNotice';overlay.style='position:fixed;inset:0;z-index:32000;background:rgba(15,23,42,.64);display:flex;align-items:flex-end;justify-content:center';
+ overlay.innerHTML=`<div style="width:min(100%,480px);background:#fff;border-radius:24px 24px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom))"><div class="kicker">ENTEGO</div><h2 style="margin:6px 0">${aruEsc(title)}</h2><p class="meta">${aruEsc(message)}</p><button class="btn primary" id="aruNoticeClose" style="width:100%;margin-top:14px">Mengerti</button></div>`;
+ document.body.appendChild(overlay);overlay.querySelector('#aruNoticeClose').onclick=()=>overlay.remove();overlay.onclick=e=>{if(e.target===overlay)overlay.remove()};
+}
+
 function hideLegacyProfileRows(main){
  const labels=['Arda','Riwayat transaksi','Metode pembayaran','Alamat tersimpan','Voucher & promo','ENTEGO Wallet','Jadi Mitra ENTEGO','Pengaturan','Bantuan & keamanan','Admin Demo','Admin Control Center'];
  [...main.children].forEach(el=>{
   if(el.id==='entegoAuthPanel'||el.id==='entegoRoleAccountMenu'||el.id==='entegoSessionManager'||el.id==='entegoPrivacyCenter'||el.id==='entegoIdentityCenter')return;
-  const text=(el.textContent||'').trim();
-  if(labels.some(x=>text.includes(x)))el.style.display='none';
+  const text=(el.textContent||'').trim();if(labels.some(x=>text.includes(x)))el.style.display='none';
  });
 }
 
 function accountMenuMarkup(user){
- const role=user?.role||'guest';
- if(role==='guest')return '';
+ const role=user?.role||'guest';if(role==='guest')return '';
  if(role==='customer'){
   const wallet=customerIdentityApproved()?aruMenuRow('wallet','ENTEGO Wallet','Saldo, refund, dan transaksi Wallet.','wallet','ID Verified'):'';
-  return `${aruMenuRow('history','Riwayat Transaksi','Booking dan pembayaran kamu.','orders')}${aruMenuRow('payment','Metode Pembayaran','Pilih saat checkout booking.','checkout')}${aruMenuRow('address','Alamat Tersimpan','Simpan lokasi acara favorit.','addresses')}${aruMenuRow('voucher','Voucher & Promo','Promo aktif dan voucher ENTEGO.','vouchers')}${wallet}${aruMenuRow('partner','Jadi Mitra ENTEGO','Daftarkan talent, bisnis, venue, EO/WO, atau layanan event.','partnerOnboarding')}${aruMenuRow('settings','Pengaturan','Kelola preferensi akun.','settings')}${aruMenuRow('help','Bantuan & Keamanan','Support, privasi, dan keamanan akun.','help')}`;
+  return `${aruMenuRow('history','Riwayat Transaksi','Booking dan pembayaran kamu.','orders')}${aruMenuRow('payment','Metode Pembayaran','Dipilih saat checkout booking.','checkout')}${aruMenuRow('address','Alamat Tersimpan','Simpan lokasi acara favorit.','addresses')}${aruMenuRow('voucher','Voucher & Promo','Promo aktif dan voucher ENTEGO.','vouchers')}${wallet}${aruMenuRow('partner','Jadi Mitra ENTEGO','Daftarkan talent, bisnis, venue, EO/WO, atau layanan event.','partnerOnboarding')}${aruMenuRow('settings','Pengaturan','Kelola preferensi akun.','settings')}${aruMenuRow('help','Bantuan & Keamanan','Support, privasi, dan keamanan akun.','help')}`;
  }
  if(role==='partner')return `${aruMenuRow('dashboard','Dashboard Mitra','Kelola layanan, order, marketing, dan payout.','partner')}${aruMenuRow('history','Order & Riwayat','Lihat aktivitas order mitra.','partnerOrders')}${aruMenuRow('settings','Pengaturan','Kelola preferensi akun.','settings')}${aruMenuRow('help','Bantuan & Keamanan','Support, privasi, dan keamanan akun.','help')}`;
  if(role==='admin')return `${aruMenuRow('admin','Admin Control Center','Operasional, verifikasi, pembayaran, dan support.','admin')}${aruMenuRow('settings','Pengaturan','Kelola preferensi akun.','settings')}${aruMenuRow('help','Bantuan & Keamanan','Support, privasi, dan keamanan akun.','help')}`;
@@ -48,21 +54,16 @@ function accountMenuMarkup(user){
 }
 
 function aruRender(){
- if(ARU_ROUTE()!=='profile')return;
- const main=document.querySelector('main.content');if(!main)return;
- hideLegacyProfileRows(main);
- const user=aruUser();
- let section=document.querySelector('#entegoRoleAccountMenu');
- if(!user){section?.remove();return}
+ if(ARU_ROUTE()!=='profile')return;const main=document.querySelector('main.content');if(!main)return;hideLegacyProfileRows(main);
+ const user=aruUser();let section=document.querySelector('#entegoRoleAccountMenu');if(!user){section?.remove();return}
  if(!section){section=document.createElement('section');section.id='entegoRoleAccountMenu';section.className='aru-menu';const auth=document.querySelector('#entegoAuthPanel');auth?.after(section)||main.prepend(section)}
  section.innerHTML=`<style id="entegoAccountRoleUXStyle">.aru-menu{display:grid;gap:10px;margin:14px 0}.aru-row{width:100%;border:1px solid #e6eaf0;background:#fff;border-radius:20px;padding:13px 14px;display:grid;grid-template-columns:48px minmax(0,1fr) auto 16px;align-items:center;gap:11px;text-align:left;color:#0f172a;box-shadow:0 7px 20px rgba(15,23,42,.055);min-height:76px}.aru-row:active{transform:scale(.992)}.aru-icon{width:48px;height:48px;border-radius:15px;background:#f4f5f7;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;color:#0f172a}.aru-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.aru-copy b{font-size:15px;line-height:1.25}.aru-copy small{font-size:11px;line-height:1.3;color:#64748b}.aru-arrow{font-size:25px;line-height:1;color:#334155}.aru-badge{font-size:9px;font-weight:850;color:#166534;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:999px;padding:5px 7px;white-space:nowrap}@media(max-width:370px){.aru-row{grid-template-columns:44px minmax(0,1fr) 14px;padding:11px}.aru-icon{width:44px;height:44px}.aru-badge{display:none}}</style><div class="kicker">MENU AKUN</div>${accountMenuMarkup(user)}`;
 }
 
 document.addEventListener('click',e=>{
- const wallet=e.target.closest?.('[data-route="wallet"]');if(!wallet)return;
- const user=aruUser();if(user?.role!=='customer'||!customerIdentityApproved()){
-  e.preventDefault();e.stopImmediatePropagation();alert('ENTEGO Wallet hanya tersedia untuk Customer yang sudah menyelesaikan verifikasi identitas.');
- }
+ const item=e.target.closest?.('#entegoRoleAccountMenu [data-route]');if(!item)return;const route=item.dataset.route;const user=aruUser();
+ if(route==='wallet'&&(user?.role!=='customer'||!customerIdentityApproved())){e.preventDefault();e.stopImmediatePropagation();aruNotice('Verifikasi Identitas Diperlukan','ENTEGO Wallet hanya dapat muncul dan digunakan setelah verifikasi identitas Customer berstatus disetujui.');return}
+ if(FUTURE_ACCOUNT_ROUTES.has(route)){e.preventDefault();e.stopImmediatePropagation();const copy={addresses:['Alamat Tersimpan','Fitur alamat tersimpan sedang dipersiapkan. Saat ini lokasi acara tetap diisi saat booking.'],vouchers:['Voucher & Promo','Pusat voucher dan promo sedang dipersiapkan. Promo yang aktif akan ditampilkan saat fitur siap.'],settings:['Pengaturan','Pengaturan akun tambahan sedang dipersiapkan. Keamanan, privasi, dan sesi tetap tersedia melalui Bantuan & Keamanan.'],wallet:['ENTEGO Wallet','Status verifikasi identitas sudah memenuhi syarat tampilan Wallet. Sistem saldo Wallet belum diaktifkan sampai backend finansialnya siap.']}[route];aruNotice(copy[0],copy[1])}
 },true);
 
 let aruScheduled=false;function aruSchedule(){if(aruScheduled)return;aruScheduled=true;requestAnimationFrame(()=>{aruScheduled=false;aruRender()})}
