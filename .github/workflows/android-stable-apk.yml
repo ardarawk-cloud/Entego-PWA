@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      ENTEGO_VERSION_NAME: '1.0.11'
+      ENTEGO_VERSION_NAME: '1.0.12'
       ENTEGO_KEYSTORE_B64: ${{ secrets.ENTEGO_ANDROID_KEYSTORE_B64 }}
       ENTEGO_KEY_ALIAS: ${{ secrets.ENTEGO_ANDROID_KEY_ALIAS }}
       ENTEGO_STORE_PASSWORD: ${{ secrets.ENTEGO_ANDROID_STORE_PASSWORD }}
@@ -55,7 +55,7 @@ jobs:
       - name: Build ENTEGO web bundle
         run: npm run build
 
-      - name: Verify ENTEGO v1.0.11 logout and UI hotfix gates
+      - name: Verify ENTEGO v1.0.12 account role and home copy gates
         shell: bash
         run: |
           set -euo pipefail
@@ -63,7 +63,7 @@ jobs:
           from pathlib import Path
           required=[
             'index.html','dist/index.html','dist/assets/index-v87.js','dist/assets/index-v87.css','dist/logo-header.png',
-            'dist/logout-hotfix-flow.js','dist/partner-category-flow.js','dist/route-loader-flow.js','dist/sw.js',
+            'dist/logout-hotfix-flow.js','dist/partner-category-flow.js','dist/home-copy-flow.js','dist/account-role-ux-flow.js','dist/route-loader-flow.js','dist/sw.js',
             'dist/identity-submit-hotfix-flow.js','dist/service-menu-flow.js','dist/partner-marketing-flow.js',
             'partner-api.js','partner-store-v3.js','identity-api.js','partner-store-v2.js','capacitor.config.json'
           ]
@@ -71,12 +71,14 @@ jobs:
           if missing: raise SystemExit(f'MISSING REQUIRED FILES: {missing}')
           checks={
             'dist/assets/index-v87.js':['globalThis.ENTEGO_HOME_VERSION="1.0.9"','Jelajahi Kategori','MUA','Event Organizer','Wedding Organizer','/logo-header.png?v=87'],
+            'dist/home-copy-flow.js':["ENTEGO_HOME_COPY_VERSION='1.0'",'Semua Kebutuhan Event, Satu Aplikasi','titleCaseCategory','clamp(24px,7vw,28px)'],
+            'dist/account-role-ux-flow.js':["ENTEGO_ACCOUNT_ROLE_UX_VERSION='1.0'",'MENU AKUN','Riwayat Transaksi','Metode Pembayaran','Alamat Tersimpan','Voucher & Promo','ENTEGO Wallet','customerIdentityApproved','ID Verified','Dashboard Mitra','Admin Control Center'],
             'dist/logout-hotfix-flow.js':["ENTEGO_LOGOUT_HOTFIX_VERSION='1.1'",'entego_force_logged_out','entegoLogout','authLoginBtn','authRegisterBtn','location.replace'],
             'dist/partner-category-flow.js':["ENTEGO_PARTNER_CATEGORY_VERSION='2.1'",'grid-template-columns:20px minmax(0,1fr)','min-height:48px','entego_partner_services'],
-            'dist/route-loader-flow.js':["RL_VERSION='89'",'logout-hotfix-flow.js','identity-submit-hotfix-flow.js','partner-marketing-flow.js'],
-            'index.html':['/sw.js?v=89','/logout-hotfix-flow.js?v=89','/route-loader-flow.js?v=89','/logo-header.png?v=87'],
-            'dist/index.html':["ENTEGO_BOOT_VERSION='89'",'/sw.js?v=89','/logo-header.png?v=87','Semua kebutuhan event, satu tempat.'],
-            'dist/sw.js':['entego-v89','/assets/index-v87.js','/logo-header.png?v=87','/route-loader-flow.js?v=89','/logout-hotfix-flow.js?v=89'],
+            'dist/route-loader-flow.js':["RL_VERSION='90'",'home-copy-flow.js','account-role-ux-flow.js','identity-submit-hotfix-flow.js','partner-marketing-flow.js'],
+            'index.html':['/sw.js?v=90','/home-copy-flow.js?v=90','/route-loader-flow.js?v=90','/logo-header.png?v=87','Semua Kebutuhan Event, Satu Aplikasi'],
+            'dist/index.html':["ENTEGO_BOOT_VERSION='90'",'/logo-header.png?v=87','/sw.js?v=90','Semua Kebutuhan Event, Satu Aplikasi'],
+            'dist/sw.js':['entego-v90','/assets/index-v87.js','/logo-header.png?v=87','/route-loader-flow.js?v=90','/home-copy-flow.js?v=90','/account-role-ux-flow.js?v=90'],
             'dist/identity-submit-hotfix-flow.js':["IDENTITY_SUBMIT_HOTFIX_VERSION='79'",'Masukkan 4 digit terakhir','sessionStorage'],
             'dist/service-menu-flow.js':["ENTEGO_SERVICE_MENU_VERSION='1.1'",'ENTEGO_MIN_SERVICE_PRICE=1000000'],
             'partner-api.js':['MIN_SERVICE_PRICE=1000000'],
@@ -94,12 +96,14 @@ jobs:
           for legacy in ['["Entertainment",["DJ","MC","Live Band","Singer"]]','price:900000']:
             if legacy in bundle: failures.append(f'legacy core marker: {legacy}')
           if failures:
-            print('ENTEGO v1.0.11 VERIFY FAILURES:')
+            print('ENTEGO v1.0.12 VERIFY FAILURES:')
             for x in failures: print(' -',x)
             raise SystemExit(1)
-          print('VERIFIED: force logout + stale-auth guard')
-          print('VERIFIED: partner checkbox precision UI v2.1')
-          print('VERIFIED: Home v1.0.9 + logo v87 preserved')
+          print('VERIFIED: account menu appears only for authenticated role')
+          print('VERIFIED: customer Wallet UI requires customer identity approved cache state')
+          print('VERIFIED: Customer / Partner / Admin account menus are separated')
+          print('VERIFIED: Home headline capitalization + category title case')
+          print('VERIFIED: Home v1.0.9 core + logo v87 + logout v1.1 preserved')
           print('VERIFIED: KYC v79 + pricing floor + multi-service retained')
           PY
 
@@ -177,11 +181,14 @@ jobs:
             echo "versionCode=${ENTEGO_VERSION_CODE}"
             echo "applicationId=com.ardacore.entego"
             echo "homeOverride=1.0.9"
+            echo "homeCopy=1.0"
+            echo "accountRoleUX=1.0"
+            echo "customerWalletGate=identity-approved-ui-gate"
             echo "logoAsset=logo-header.png-v87-hard-lock"
             echo "logoutHotfix=1.1"
             echo "partnerCategoryUI=2.1"
             echo "kycSubmitHotfix=79"
-            echo "clientCacheGeneration=89"
+            echo "clientCacheGeneration=90"
             echo "minimumServicePrice=1000000"
             echo "signing=${SIGNING}"
             echo "commit=${GITHUB_SHA}"
@@ -192,10 +199,10 @@ jobs:
         if: ${{ env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.11-STABLE-UPDATEABLE
+          name: ENTEGO-Android-v1.0.12-STABLE-UPDATEABLE
           path: |
-            stable-out/ENTEGO-Android-v1.0.11-stable.apk
-            stable-out/ENTEGO-Android-v1.0.11-stable.aab
+            stable-out/ENTEGO-Android-v1.0.12-stable.apk
+            stable-out/ENTEGO-Android-v1.0.12-stable.aab
             stable-out/signing-certificate.txt
             stable-out/build-info.txt
             stable-out/SHA256SUMS.txt
@@ -206,10 +213,10 @@ jobs:
         if: ${{ !(env.ENTEGO_KEYSTORE_B64 != '' && env.ENTEGO_KEY_ALIAS != '' && env.ENTEGO_STORE_PASSWORD != '' && env.ENTEGO_KEY_PASSWORD != '') }}
         uses: actions/upload-artifact@v4
         with:
-          name: ENTEGO-Android-v1.0.11-PROTECTED-SIGNING-CANDIDATE
+          name: ENTEGO-Android-v1.0.12-PROTECTED-SIGNING-CANDIDATE
           path: |
-            stable-out/ENTEGO-Android-v1.0.11-stable-aligned-unsigned.apk
-            stable-out/ENTEGO-Android-v1.0.11-stable-unsigned.aab
+            stable-out/ENTEGO-Android-v1.0.12-stable-aligned-unsigned.apk
+            stable-out/ENTEGO-Android-v1.0.12-stable-unsigned.aab
             stable-out/apksigner.jar
             stable-out/build-info.txt
             stable-out/SHA256SUMS.txt
