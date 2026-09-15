@@ -2,7 +2,7 @@
   "appId": "com.ardacore.entego",
   "appName": "ENTEGO",
   "webDir": "dist",
-  "loggingBehavior": "debug",
+  "loggingBehavior": "production",
   "backgroundColor": "#0f172a",
   "android": {
     "allowMixedContent": false,
