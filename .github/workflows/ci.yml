@@ -60,7 +60,7 @@ jobs:
             'dist/identity-submit-hotfix-flow.js':["IDENTITY_SUBMIT_HOTFIX_VERSION='79'",'Masukkan 4 digit terakhir','sessionStorage'],
             'dist/service-menu-flow.js':["ENTEGO_SERVICE_MENU_VERSION='1.1'",'ENTEGO_MIN_SERVICE_PRICE=1000000'],
             'dist/privacy.html':['Kebijakan Privasi ENTEGO','16 September 2026','Penyimpanan dan retensi','account-removal.html'],
-            'dist/account-removal.html':['Penutupan dan Penghapusan Akun','booking aktif','Kebijakan Privasi'],
+            'dist/account-removal.html':['Penghapusan Akun ENTEGO','Ajukan melalui ENTEGO Web','Support &amp; Safety','Kebijakan Privasi'],
             'partner-api.js':['MIN_SERVICE_PRICE=1000000'],
             'partner-store-v3.js':['services_json'],
             'identity-api.js':["IDENTITY_TYPES=['KTP','SIM','PASSPORT']",'ENT_IDENTITY_MEDIA'],
