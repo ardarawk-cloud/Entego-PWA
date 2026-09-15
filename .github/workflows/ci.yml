@@ -40,8 +40,10 @@ jobs:
             'dist/logo-header.png','dist/event-ecosystem-flow.js','dist/service-menu-flow.js',
             'dist/partner-category-flow.js','dist/logout-hotfix-flow.js','dist/home-copy-flow.js','dist/account-role-ux-flow.js','dist/route-loader-flow.js',
             'dist/auth-flow.js','dist/identity-center-flow.js','dist/identity-submit-hotfix-flow.js',
+            'dist/privacy.html','dist/account-removal.html',
             'partner-api.js','partner-store-v2.js','partner-store-v3.js','identity-api.js','api-worker-v63.js',
-            'wrangler.jsonc','scripts/ensure-private-r2.mjs','package.json','media-api.js','market-booking-flow.js'
+            'wrangler.jsonc','scripts/ensure-private-r2.mjs','package.json','media-api.js','market-booking-flow.js',
+            'PLAY-DATA-SAFETY-INVENTORY.md','ANDROID-PERMISSION-AUDIT.md'
           ]
           missing=[p for p in required if not Path(p).is_file()]
           if missing: raise SystemExit(f'Missing required files: {missing}')
@@ -57,11 +59,16 @@ jobs:
             'dist/partner-category-flow.js':["ENTEGO_PARTNER_CATEGORY_VERSION='2.1'",'grid-template-columns:20px minmax(0,1fr)','min-height:48px','entego_partner_services'],
             'dist/identity-submit-hotfix-flow.js':["IDENTITY_SUBMIT_HOTFIX_VERSION='79'",'Masukkan 4 digit terakhir','sessionStorage'],
             'dist/service-menu-flow.js':["ENTEGO_SERVICE_MENU_VERSION='1.1'",'ENTEGO_MIN_SERVICE_PRICE=1000000'],
+            'dist/privacy.html':['Kebijakan Privasi ENTEGO','16 September 2026','Penyimpanan dan retensi','account-removal.html'],
+            'dist/account-removal.html':['Penutupan dan Penghapusan Akun','booking aktif','Kebijakan Privasi'],
             'partner-api.js':['MIN_SERVICE_PRICE=1000000'],
             'partner-store-v3.js':['services_json'],
             'identity-api.js':["IDENTITY_TYPES=['KTP','SIM','PASSPORT']",'ENT_IDENTITY_MEDIA'],
             'wrangler.jsonc':['"main":"./api-worker-v63.js"','"binding":"ENT_IDENTITY_MEDIA"'],
-            'package.json':['node scripts/ensure-private-r2.mjs']
+            'package.json':['node scripts/ensure-private-r2.mjs'],
+            'capacitor.config.json':['"appId": "com.ardacore.entego"','"loggingBehavior": "production"','"webContentsDebuggingEnabled": false'],
+            'PLAY-DATA-SAFETY-INVENTORY.md':['Google Play Data Safety Inventory','account_closure','ENT_IDENTITY_MEDIA'],
+            'ANDROID-PERMISSION-AUDIT.md':['ACCESS_FINE_LOCATION','RECORD_AUDIO','Runtime permission evidence remains required']
           }
           failures=[]
           for file,markers in checks.items():
@@ -77,7 +84,7 @@ jobs:
             print('ENTEGO CI FAILURES:')
             for x in failures: print(' -',x)
             raise SystemExit(1)
-          print('VERIFIED: current ENTEGO production gates + account role UX + home copy v90')
+          print('VERIFIED: ENTEGO production gates + Play privacy resources + production Android logging config')
           PY
 
       - name: Validate Cloudflare Worker bundle
