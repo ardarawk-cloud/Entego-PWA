@@ -1,4 +1,4 @@
-const RL_VERSION='90';
+const RL_VERSION='91';
 const rlLoaded=new Set();
 let rlRoute='';
 const rlCurrent=()=>localStorage.getItem('entego_route')||'home';
@@ -26,7 +26,7 @@ async function rlForRoute(route){
  if(['partner','partnerPackages','partnerCalendar','detail','booking','checkout'].includes(route))modules.push('partner-offer-flow.js');
  if(['partner','partnerOnboarding','partnerProfile','partnerPackages','detail','booking','checkout'].includes(route))modules.push('service-menu-flow.js');
  if(route==='partnerPortfolio')modules.push('partner-marketplace-flow.js','portfolio-media-flow.js');
- if(route==='profile')modules.push('account-role-ux-flow.js','security-sessions-flow.js','privacy-center-flow.js');
+ if(route==='profile')modules.push('account-role-ux-flow.js','security-sessions-flow.js','privacy-center-flow.js','play-privacy-links-flow.js');
  if(route==='help')modules.push('support-center-flow.js');
  if(ADMIN_BASE.includes(route))modules.push('admin-route-integrity-flow.js','admin-account-control-flow.js');
  if(['admin','adminVerify'].includes(route))modules.push('admin-verification-flow.js');
