@@ -24,15 +24,15 @@
   </div></div>
   <script>
     (()=>{
-      const ENTEGO_BOOT_VERSION='90';
-      const ENTEGO_ASSET_STRATEGY='home-v87-account-role-copy-v90';
+      const ENTEGO_BOOT_VERSION='91';
+      const ENTEGO_ASSET_STRATEGY='home-v87-account-role-copy-v90-play-privacy-v91';
       const ENTEGO_LOGO_LOCK='/logo-header.png?v=87';
       window.ENTEGO_LOGO_LOCK=ENTEGO_LOGO_LOCK;
       const status=()=>document.getElementById('entegoShellStatus');
       setTimeout(()=>{const s=status();if(s&&document.getElementById('entegoStaticShell'))s.textContent='Koneksi lambat — tampilan tetap tersedia, fitur sedang dimuat…'},3000);
       window.addEventListener('error',e=>{if((e.target?.tagName==='SCRIPT'||e.target?.tagName==='LINK')&&status())status().textContent='Modul belum termuat. ENTEGO akan mencoba lagi saat koneksi tersedia.'},true);
       window.addEventListener('unhandledrejection',()=>{if(status())status().textContent='Sebagian fitur belum termuat. Tampilan utama tetap aman.'});
-      if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=90',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})})}).catch(()=>{})}
+      if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=91',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})})}).catch(()=>{})}
     })();
   </script>
   <script type="module" src="/main.js?v=87"></script>
@@ -42,5 +42,5 @@
   <script type="module" src="/production-guard-flow.js?v=87"></script>
   <script type="module" src="/logout-hotfix-flow.js?v=89"></script>
   <script type="module" src="/home-copy-flow.js?v=90"></script>
-  <script type="module" src="/route-loader-flow.js?v=90"></script>
+  <script type="module" src="/route-loader-flow.js?v=91"></script>
 </body></html>
