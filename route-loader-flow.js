@@ -10,7 +10,7 @@ const CUSTOMER_ORDER=['orders','orderdetail','chatCustomer'];
 const PARTNER_BASE=['partner','partnerOnboarding','partnerProfile','partnerPackages','partnerCalendar','partnerPortfolio','partnerOrders','partnerOrderDetail','partnerChat'];
 const ADMIN_BASE=['admin','adminBookings','adminPayments','adminVerify','adminDispute','adminUsers','adminAccounts'];
 async function rlForRoute(route){
- const modules=['logout-hotfix-flow.js','auth-flow.js','event-ecosystem-flow.js'];
+ const modules=['logout-hotfix-flow.js','auth-flow.js','event-ecosystem-flow.js','legal-company-flow.js'];
  if(route==='home')modules.push('home-copy-flow.js');
  if(route!=='home')modules.push('truthful-data-flow.js');
  if(['profile','notifications','orders','partner','partnerOrders','admin','adminBookings','adminPayments','adminVerify'].includes(route))modules.push('action-center-flow.js');
