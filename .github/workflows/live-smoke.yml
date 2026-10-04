@@ -29,7 +29,7 @@ jobs:
             privacy="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/privacy.html" 2>/dev/null || true)"
             removal="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-removal.html" 2>/dev/null || true)"
             legal="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/legal.html" 2>/dev/null || true)"
-            if grep -Fq "$EXPECTED_BOOT" <<<"$index"               && grep -Fq "$EXPECTED_CACHE" <<<"$sw"               && grep -Fq "RL_VERSION='92'" <<<"$loader"               && grep -Fq '"version":"v64"' <<<"$health"               && grep -Fq 'admin-reviewed-delete-anonymize-v2' <<<"$health"               && grep -Fq 'Kebijakan Privasi ENTEGO' <<<"$privacy"               && grep -Fq 'PT NADMO STUDIO INDONESIA' <<<"$privacy"               && grep -Fq 'Penghapusan Akun ENTEGO' <<<"$removal"               && grep -Fq 'Informasi Legal ENTEGO' <<<"$legal"; then
+            if grep -Fq "Semua Kebutuhan Event, Satu Aplikasi" <<<"$index"               && grep -Fq "$EXPECTED_CACHE" <<<"$sw"               && grep -Fq "RL_VERSION='92'" <<<"$loader"               && grep -Fq '"version":"v64"' <<<"$health"               && grep -Fq 'admin-reviewed-delete-anonymize-v2' <<<"$health"               && grep -Fq 'Kebijakan Privasi ENTEGO' <<<"$privacy"               && grep -Fq 'PT NADMO STUDIO INDONESIA' <<<"$privacy"               && grep -Fq 'Penghapusan Akun ENTEGO' <<<"$removal"               && grep -Fq 'Informasi Legal ENTEGO' <<<"$legal"; then
               echo "LIVE_V92_CORE=PASS"
               exit 0
             fi
