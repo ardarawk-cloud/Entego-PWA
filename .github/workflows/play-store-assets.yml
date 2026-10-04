@@ -1,0 +1,134 @@
+name: ENTEGO PLAY STORE ASSETS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/play-store-assets.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture-store-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      BASE_URL: https://entego-pwa.ardarawk.workers.dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Verify Play icon dimensions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          import struct
+          for name in ['icon-512.png','icon-maskable-512.png']:
+              p=Path(name)
+              if not p.is_file():
+                  raise SystemExit(f'Missing {name}')
+              data=p.read_bytes()[:24]
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit(f'{name} is not PNG')
+              width,height=struct.unpack('>II',data[16:24])
+              print(f'{name}: {width}x{height}')
+              if (width,height)!=(512,512):
+                  raise SystemExit(f'{name} must be 512x512')
+          print('PLAY_ICON_512=PASS')
+          PY
+
+      - name: Install screenshot harness
+        shell: bash
+        run: |
+          npm install --no-save --no-audit --no-fund playwright-core
+          if command -v google-chrome >/dev/null 2>&1; then echo "CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"; \
+          elif command -v google-chrome-stable >/dev/null 2>&1; then echo "CHROME=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"; \
+          elif command -v chromium >/dev/null 2>&1; then echo "CHROME=$(command -v chromium)" >> "$GITHUB_ENV"; \
+          else echo 'No system Chrome found'; exit 1; fi
+
+      - name: Capture production phone screenshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p play-store-assets
+          node <<'NODE'
+          const { chromium }=require('playwright-core');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
+            const context=await browser.newContext({
+              viewport:{width:432,height:768},
+              deviceScaleFactor:2.5,
+              isMobile:true,
+              hasTouch:true,
+              userAgent:'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/154 Mobile Safari/537.36'
+            });
+            const page=await context.newPage();
+            async function capture(route,name){
+              await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:20000});
+              await page.evaluate(r=>localStorage.setItem('entego_route',r),route);
+              await page.reload({waitUntil:'domcontentloaded',timeout:20000});
+              await page.waitForTimeout(2800);
+              const main=await page.locator('main.content').count();
+              if(main<1)throw new Error('main content missing for '+route);
+              await page.screenshot({path:'play-store-assets/'+name+'.png',fullPage:false});
+              console.log('captured',route,name);
+            }
+            await capture('home','01-home');
+            await capture('services','02-services');
+            await capture('explore','03-explore');
+            await capture('profile','04-account');
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+      - name: Verify screenshot dimensions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          import struct
+          expected=(1080,1920)
+          shots=list(sorted(Path('play-store-assets').glob('*.png')))
+          for p in shots:
+              data=p.read_bytes()[:24]
+              width,height=struct.unpack('>II',data[16:24])
+              print(f'{p.name}: {width}x{height}')
+              if (width,height)!=expected:
+                  raise SystemExit(f'{p.name} expected {expected}, got {(width,height)}')
+          if len(shots)<4:
+              raise SystemExit('Expected at least 4 phone screenshots')
+          print('PLAY_PHONE_SCREENSHOTS=PASS')
+          PY
+
+      - name: Record store asset manifest
+        shell: bash
+        run: |
+          {
+            echo "ENTEGO Google Play production screenshot set"
+            echo "source=${BASE_URL}"
+            echo "commit=${GITHUB_SHA}"
+            echo "cache=v92"
+            echo "resolution=1080x1920"
+            echo "captures=home,services,explore,account"
+            echo "icon512=verified"
+          } > play-store-assets/MANIFEST.txt
+          sha256sum play-store-assets/*.png > play-store-assets/SHA256SUMS.txt
+
+      - name: Upload Play Store screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENTEGO-Play-Store-Screenshots-v92
+          path: play-store-assets/
+          if-no-files-found: error
+          retention-days: 30
