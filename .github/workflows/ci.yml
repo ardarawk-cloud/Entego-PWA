@@ -41,7 +41,7 @@ jobs:
             'dist/partner-category-flow.js','dist/logout-hotfix-flow.js','dist/home-copy-flow.js','dist/account-role-ux-flow.js','dist/route-loader-flow.js','dist/play-privacy-links-flow.js',
             'dist/auth-flow.js','dist/identity-center-flow.js','dist/identity-submit-hotfix-flow.js',
             'dist/privacy.html','dist/account-removal.html','dist/legal.html','dist/legal-company-flow.js',
-            'partner-api.js','partner-store-v2.js','partner-store-v3.js','identity-api.js','api-worker-v63.js',
+            'partner-api.js','partner-store-v2.js','partner-store-v3.js','partner-store-v4.js','auth-store-v4.js','chat-store-v2.js','support-store-v2.js','identity-api.js','api-worker-v63.js','api-worker-v64.js',
             'wrangler.jsonc','scripts/ensure-private-r2.mjs','package.json','media-api.js','market-booking-flow.js',
             'PLAY-DATA-SAFETY-INVENTORY.md','ANDROID-PERMISSION-AUDIT.md','PLAY-SUBMISSION-CHECKLIST.md'
           ]
@@ -51,23 +51,28 @@ jobs:
             'dist/assets/index-v87.js':['globalThis.ENTEGO_HOME_VERSION="1.0.9"','Jelajahi Kategori','Layanan Populer','MUA','Event Organizer','Wedding Organizer','/logo-header.png?v=87'],
             'dist/home-copy-flow.js':["ENTEGO_HOME_COPY_VERSION='1.0'",'Semua Kebutuhan Event, Satu Aplikasi','titleCaseCategory','clamp(24px,7vw,28px)'],
             'dist/account-role-ux-flow.js':["ENTEGO_ACCOUNT_ROLE_UX_VERSION='1.0'",'MENU AKUN','Riwayat Transaksi','Metode Pembayaran','Alamat Tersimpan','Voucher & Promo','ENTEGO Wallet','customerIdentityApproved','ID Verified','Dashboard Mitra','Admin Control Center'],
-            'dist/route-loader-flow.js':["RL_VERSION='91'",'play-privacy-links-flow.js','account-role-ux-flow.js','logout-hotfix-flow.js','auth-flow.js','partner-category-flow.js','identity-submit-hotfix-flow.js'],
+            'dist/route-loader-flow.js':["RL_VERSION='92'",'play-privacy-links-flow.js','account-role-ux-flow.js','logout-hotfix-flow.js','auth-flow.js','partner-category-flow.js','identity-submit-hotfix-flow.js'],
             'dist/play-privacy-links-flow.js':["ENTEGO_PLAY_PRIVACY_LINKS_VERSION='1.0'",'/privacy.html','/account-removal.html','Buka Support & Safety'],
             'dist/legal-company-flow.js':["ENTEGO_LEGAL_COMPANY_VERSION='1.0'",'PT NADMO STUDIO INDONESIA','2809260089771','/legal.html'],
-            'index.html':['/sw.js?v=91','/home-copy-flow.js?v=90','/route-loader-flow.js?v=91','/logo-header.png?v=87','Semua Kebutuhan Event, Satu Aplikasi'],
-            'dist/index.html':["ENTEGO_BOOT_VERSION='91'",'/sw.js?v=91','/logo-header.png?v=87','Semua Kebutuhan Event, Satu Aplikasi'],
-            'dist/sw.js':['const CACHE="entego-v91"','const DIRECTORY_CACHE="entego-directory-v91"','/route-loader-flow.js?v=91','/play-privacy-links-flow.js?v=91','/legal-company-flow.js?v=91','/privacy.html','/account-removal.html','/legal.html'],
+            'index.html':['/sw.js?v=92','/home-copy-flow.js?v=90','/route-loader-flow.js?v=92','/logo-header.png?v=87','Semua Kebutuhan Event, Satu Aplikasi'],
+            'dist/index.html':["ENTEGO_BOOT_VERSION='92'",'/sw.js?v=92','/logo-header.png?v=87','Semua Kebutuhan Event, Satu Aplikasi'],
+            'dist/sw.js':['const CACHE="entego-v92"','const DIRECTORY_CACHE="entego-directory-v92"','/route-loader-flow.js?v=92','/play-privacy-links-flow.js?v=91','/legal-company-flow.js?v=91','/privacy.html','/account-removal.html','/legal.html'],
             'dist/logout-hotfix-flow.js':["ENTEGO_LOGOUT_HOTFIX_VERSION='1.1'",'entego_force_logged_out','entegoLogout','authLoginBtn','authRegisterBtn','location.replace'],
             'dist/partner-category-flow.js':["ENTEGO_PARTNER_CATEGORY_VERSION='2.1'",'grid-template-columns:20px minmax(0,1fr)','min-height:48px','entego_partner_services'],
             'dist/identity-submit-hotfix-flow.js':["IDENTITY_SUBMIT_HOTFIX_VERSION='79'",'Masukkan 4 digit terakhir','sessionStorage'],
             'dist/service-menu-flow.js':["ENTEGO_SERVICE_MENU_VERSION='1.1'",'ENTEGO_MIN_SERVICE_PRICE=1000000'],
-            'dist/privacy.html':['Kebijakan Privasi ENTEGO','29 September 2026','PT NADMO STUDIO INDONESIA','Penyimpanan dan retensi','account-removal.html','legal.html'],
+            'dist/privacy.html':['Kebijakan Privasi ENTEGO','4 Oktober 2026','PT NADMO STUDIO INDONESIA','Penyimpanan dan retensi','account-removal.html','legal.html'],
             'dist/account-removal.html':['Penghapusan Akun ENTEGO','Ajukan melalui ENTEGO Web','Support &amp; Safety','Kebijakan Privasi','PT NADMO STUDIO INDONESIA','legal.html'],
             'dist/legal.html':['Informasi Legal ENTEGO','PT NADMO STUDIO INDONESIA','2809260089771','AHU-A126270.AH.01.30.Tahun 2026','Denpasar, Bali, Indonesia'],
             'partner-api.js':['MIN_SERVICE_PRICE=1000000'],
             'partner-store-v3.js':['services_json'],
             'identity-api.js':["IDENTITY_TYPES=['KTP','SIM','PASSPORT']",'ENT_IDENTITY_MEDIA'],
-            'wrangler.jsonc':['"main":"./api-worker-v63.js"','"binding":"ENT_IDENTITY_MEDIA"'],
+            'wrangler.jsonc':['"main":"./api-worker-v64.js"','"binding":"ENT_IDENTITY_MEDIA"'],
+            'api-worker-v64.js':['admin-reviewed-delete-anonymize-v2','deletedIdentityMedia','close_account'],
+            'auth-store-v4.js':["status='closed'",'Deleted Account','DELETE FROM sessions'],
+            'partner-store-v4.js':['account_closed_identity_deleted',"identity_status='closed'","ktp_key=''"],
+            'support-store-v2.js':['Closed account support record',"description=''"],
+            'dist/support-center-flow.js':['Tutup & Anonimkan Akun','Konfirmasi kedua','close_account'],
             'package.json':['node scripts/ensure-private-r2.mjs'],
             'capacitor.config.json':['"appId": "com.ardacore.entego"','"loggingBehavior": "production"','"webContentsDebuggingEnabled": false'],
             'PLAY-DATA-SAFETY-INVENTORY.md':['Google Play Data Safety Inventory','account_closure','ENT_IDENTITY_MEDIA'],
@@ -88,7 +93,7 @@ jobs:
             print('ENTEGO CI FAILURES:')
             for x in failures: print(' -',x)
             raise SystemExit(1)
-          print('VERIFIED: ENTEGO production gates + Play privacy resources + cache v91 + production Android logging config')
+          print('VERIFIED: ENTEGO production gates + Play privacy resources + cache v92 + production Android logging config')
           PY
 
       - name: Validate Cloudflare Worker bundle
