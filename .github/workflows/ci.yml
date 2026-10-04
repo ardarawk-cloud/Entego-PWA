@@ -43,7 +43,7 @@ jobs:
             'dist/privacy.html','dist/account-removal.html','dist/legal.html','dist/legal-company-flow.js',
             'partner-api.js','partner-store-v2.js','partner-store-v3.js','partner-store-v4.js','auth-store-v4.js','chat-store-v2.js','support-store-v2.js','identity-api.js','api-worker-v63.js','api-worker-v64.js',
             'wrangler.jsonc','scripts/ensure-private-r2.mjs','package.json','media-api.js','market-booking-flow.js',
-            'PLAY-DATA-SAFETY-INVENTORY.md','ANDROID-PERMISSION-AUDIT.md','PLAY-SUBMISSION-CHECKLIST.md'
+            'PLAY-DATA-SAFETY-INVENTORY.md','ANDROID-PERMISSION-AUDIT.md','PLAY-SUBMISSION-CHECKLIST.md','PLAY-REVIEWER-GUIDE.md'
           ]
           missing=[p for p in required if not Path(p).is_file()]
           if missing: raise SystemExit(f'Missing required files: {missing}')
@@ -77,7 +77,8 @@ jobs:
             'capacitor.config.json':['"appId": "com.ardacore.entego"','"loggingBehavior": "production"','"webContentsDebuggingEnabled": false'],
             'PLAY-DATA-SAFETY-INVENTORY.md':['Google Play Data Safety Inventory','account_closure','ENT_IDENTITY_MEDIA'],
             'ANDROID-PERMISSION-AUDIT.md':['ACCESS_FINE_LOCATION','RECORD_AUDIO','Runtime permission evidence remains required'],
-            'PLAY-SUBMISSION-CHECKLIST.md':['Target: v1.1.0 Play Production Candidate','Public Privacy Policy source added','Google Play Console']
+            'PLAY-SUBMISSION-CHECKLIST.md':['Target: v1.1.0 Play Production Candidate','Public Privacy Policy source added','Google Play Console'],
+            'PLAY-REVIEWER-GUIDE.md':['Google Play Reviewer Guide','Play Console App Access','account-closure case','Customer Wallet']
           }
           failures=[]
           for file,markers in checks.items():
