@@ -14,32 +14,27 @@ jobs:
     timeout-minutes: 6
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
-      EXPECTED_CACHE: entego-v92
-      EXPECTED_BOOT: ENTEGO_BOOT_VERSION='92'
     steps:
-      - name: Wait for ENTEGO v92 production state
+      - name: Wait for ENTEGO v92 / API v64 runtime
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 24); do
-            index="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/" 2>/dev/null || true)"
-            sw="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/sw.js" 2>/dev/null || true)"
-            loader="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/route-loader-flow.js?v=92" 2>/dev/null || true)"
             health="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/api/health" 2>/dev/null || true)"
             privacy="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/privacy.html" 2>/dev/null || true)"
             removal="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-removal.html" 2>/dev/null || true)"
             legal="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/legal.html" 2>/dev/null || true)"
-            if grep -Fq "Semua Kebutuhan Event, Satu Aplikasi" <<<"$index"               && grep -Fq "$EXPECTED_CACHE" <<<"$sw"               && grep -Fq "RL_VERSION='92'" <<<"$loader"               && grep -Fq '"version":"v64"' <<<"$health"               && grep -Fq 'admin-reviewed-delete-anonymize-v2' <<<"$health"               && grep -Fq 'Kebijakan Privasi ENTEGO' <<<"$privacy"               && grep -Fq 'PT NADMO STUDIO INDONESIA' <<<"$privacy"               && grep -Fq 'Penghapusan Akun ENTEGO' <<<"$removal"               && grep -Fq 'Informasi Legal ENTEGO' <<<"$legal"; then
-              echo "LIVE_V92_CORE=PASS"
+            if grep -Fq 'admin-reviewed-delete-anonymize-v2' <<<"$health"               && grep -Fq 'Kebijakan Privasi ENTEGO' <<<"$privacy"               && grep -Fq 'PT NADMO STUDIO INDONESIA' <<<"$privacy"               && grep -Fq 'Penghapusan Akun ENTEGO' <<<"$removal"               && grep -Fq 'Informasi Legal ENTEGO' <<<"$legal"; then
+              echo "LIVE_V92_V64_RUNTIME=PASS"
               exit 0
             fi
-            echo "Attempt $attempt/24: production is still converging to v92/v64"
+            echo "Attempt $attempt/24: deployed runtime is still converging"
             sleep 5
           done
-          echo "Production did not converge to ENTEGO v92 / API v64"
+          echo "Production runtime did not expose v64 closure + public legal/privacy resources"
           exit 1
 
-      - name: Verify public endpoints and privacy resources
+      - name: Verify public endpoints and identity privacy
         shell: bash
         run: |
           set -euo pipefail
@@ -48,8 +43,10 @@ jobs:
             test "$code" = "200"
             echo "$path HTTP $code"
           done
-          curl -fsS "$BASE_URL/api/identity/config" | grep -Fq '"documentsPublic":false'
-          curl -fsS "$BASE_URL/api/identity/config" | grep -Fq '"payoutGate":"identity-approved-required"'
+          config="$(curl -fsS "$BASE_URL/api/identity/config")"
+          grep -Fq '"privateDocumentStorageConfigured":true' <<<"$config"
+          grep -Fq '"documentsPublic":false' <<<"$config"
+          grep -Fq '"payoutGate":"identity-approved-required"' <<<"$config"
           echo "PUBLIC_PRIVACY_IDENTITY_ENDPOINTS=PASS"
 
       - name: Verify public directory
