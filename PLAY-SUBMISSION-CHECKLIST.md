@@ -1,6 +1,6 @@
 # ENTEGO — Play Production Submission Checklist
 
-Date: 2026-09-16
+Date: 2026-10-04
 Target: v1.1.0 Play Production Candidate
 Package hard lock: `com.ardacore.entego`
 
@@ -13,7 +13,9 @@ This checklist separates work that is implemented in source from work that must 
 - [x] External resource points to ENTEGO Web Support so a user does not need to reinstall the APK to start a closure request.
 - [x] Existing in-app Support & Safety flow includes `Permintaan Penutupan Akun` and persists requests server-side with a Case ID.
 - [x] Existing server closure guard prevents closure while active booking/dispute/pending refund obligations remain.
-- [x] Existing Admin Support flow can review/resolve closure cases.
+- [x] Admin Support flow can review closure cases and API worker v64 performs guarded irreversible closure/anonymization.
+- [x] Approved Partner closure deletes private KYC media before account closure and fails closed if deletion storage is unavailable.
+- [x] Closed accounts have sessions revoked and cannot be reactivated through normal Admin status controls.
 - [x] Data Safety source inventory drafted.
 - [x] Android permission audit baseline drafted.
 - [x] Capacitor production config disables debug logging and WebView debugging.
