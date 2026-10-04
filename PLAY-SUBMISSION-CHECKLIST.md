@@ -22,11 +22,11 @@ This checklist separates work that is implemented in source from work that must 
 - [x] CI requires public privacy/removal resources and production Android config.
 
 ## B. Must be live before Play submission
-- [ ] Merge reviewed source to `main`.
-- [ ] Deploy public web build.
-- [ ] Verify `/privacy.html` loads publicly without authentication.
-- [ ] Verify `/account-removal.html` loads publicly without authentication.
-- [ ] Verify account-removal path works in a browser without requiring an APK reinstall.
+- [x] Merge reviewed source to `main`.
+- [x] Deploy public web build.
+- [x] Verify `/privacy.html` loads publicly without authentication.
+- [x] Verify `/account-removal.html` loads publicly without authentication.
+- [x] Verify account-removal path works in a browser without requiring an APK reinstall.
 - [ ] Verify in-app Support & Safety account-closure request on production backend.
 - [ ] Verify Admin can receive and process a closure case.
 
@@ -46,13 +46,13 @@ Reviewer passwords, OTP secrets, private identity documents, signing keys and pa
 
 ## D. Android generated-package audit
 - [ ] Build candidate AAB with protected ENTEGO signing identity.
-- [ ] Confirm `applicationId=com.ardacore.entego`.
-- [ ] Confirm versionCode is greater than every prior stable release.
-- [ ] Inspect final merged manifest permissions.
-- [ ] Confirm no unjustified location, microphone, contacts, call-log, SMS, phone-state, Bluetooth or sensor permissions.
+- [x] Confirm `applicationId=com.ardacore.entego`.
+- [x] Confirm generated v1.0.13 versionCode is greater than the signed v1.0.12 baseline.
+- [x] Inspect generated release merged manifest permissions.
+- [x] Confirm no unjustified location, microphone, contacts, call-log, SMS, phone-state, Bluetooth or sensor permissions.
 - [ ] Confirm camera permission appears only as required by current KYC/media capture behavior.
-- [ ] Confirm release WebView debugging is disabled.
-- [ ] Confirm production logging behavior.
+- [x] Confirm release WebView debugging is disabled.
+- [x] Confirm production logging behavior.
 - [ ] Retain checksum and signing certificate evidence.
 
 ## E. Real Android critical-flow evidence
@@ -99,11 +99,21 @@ Test on physical devices before Production Candidate status:
 ## F. Store assets
 - [ ] Confirm final adaptive icon rendering on Android launcher shapes.
 - [ ] Confirm final splash rendering.
-- [ ] Confirm 512×512 Play Store icon.
+- [x] Confirm 512×512 Play Store icon and 512×512 maskable icon sources.
 - [ ] Create/approve 1024×500 feature graphic.
-- [ ] Capture current production UI phone screenshots.
-- [ ] Finalize Indonesian short/full description.
-- [ ] Finalize English short/full description.
+- [x] Capture current production UI phone screenshots at 1080×1920 (Home, Services, Explore, Account).
+- [x] Prepare Indonesian short/full description in `PLAY-STORE-LISTING.md`.
+- [x] Prepare English short/full description in `PLAY-STORE-LISTING.md`.
+
+## Automated production evidence
+- [x] ENTEGO CI passes on current main.
+- [x] Cloudflare Worker dry-run passes with API worker v64.
+- [x] Browser-based LIVE SMOKE passes against deployed v92/v64 runtime.
+- [x] Android-sized browser diagnostic passes against deployed v92/v64 runtime.
+- [x] Client recovery smoke passes.
+- [x] Stable Android v1.0.13 APK/AAB build passes before signing.
+- [x] Play screenshot capture workflow passes and publishes `ENTEGO-Play-Store-Screenshots-v92`.
+- [ ] Stable signing step remains blocked until the existing ENTEGO signing key is restored to protected GitHub secrets.
 
 ## Release gate
 Do not label ENTEGO `v1.1.0 Play Production Candidate` until Sections B–E are complete, critical real-device flows have evidence, and the final AAB passes protected-signing/update-chain verification.
