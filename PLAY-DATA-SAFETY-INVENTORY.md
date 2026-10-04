@@ -1,8 +1,8 @@
 # ENTEGO — Google Play Data Safety Inventory
 
 Status: working inventory for Play Console submission
-Baseline reviewed: Android v1.0.12 / API worker v63
-Last review: 2026-09-16
+Baseline reviewed: Android v1.0.13 candidate / API worker v64
+Last review: 2026-10-04
 
 ## Product scope
 ENTEGO is a marketplace/enabler for real-world event services. Current payment flows are for real-world services. Wallet remains inactive for normal Customer accounts and must not be declared as a live financial product until a dedicated Customer KYC + ledger backend exists.
@@ -82,7 +82,7 @@ Counterparty sharing should be limited to information required to fulfill an eve
 ## Data deletion / retention declaration
 Users have an in-app Support & Safety path for `account_closure`. Server logic blocks closure while active bookings, disputes or pending refunds remain. A public privacy policy and public account-removal resource are included in the Play-readiness branch.
 
-On approved closure, the operational policy is to delete or anonymize profile data that is no longer required. Records may be retained when necessary for active/completed transactions, refunds, disputes, fraud prevention, audit, accounting, security, or applicable legal obligations. Final Play Console wording must exactly match the production operating procedure.
+On approved closure with no active booking, open dispute, or pending refund, API worker v64 revokes sessions, anonymizes the account identity, minimizes Partner profile/KYC metadata, deletes private Partner KYC media from `ENT_IDENTITY_MEDIA`, anonymizes chat display names and support-case free text, and closes the account irreversibly. Historical transaction/audit linkage may remain under an internal user ID where required for transaction history, fraud prevention, audit, accounting, security, or applicable legal obligations. Final Play Console wording must exactly match the verified production procedure.
 
 ## Collection flags requiring final console confirmation
 Do not submit the Play Console form solely from this document. Before submission, verify production runtime, processor configuration and final policies for:
