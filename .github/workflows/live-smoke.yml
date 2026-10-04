@@ -15,45 +15,62 @@ jobs:
     env:
       BASE_URL: https://entego-pwa.ardarawk.workers.dev
     steps:
-      - name: Wait for ENTEGO v92 / API v64 runtime
-        shell: bash
-        run: |
-          set -euo pipefail
-          for attempt in $(seq 1 24); do
-            health="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/api/health" 2>/dev/null || true)"
-            privacy="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/privacy.html" 2>/dev/null || true)"
-            removal="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/account-removal.html" 2>/dev/null || true)"
-            legal="$(curl -fsS --connect-timeout 8 --max-time 15 "$BASE_URL/legal.html" 2>/dev/null || true)"
-            if grep -Fq 'admin-reviewed-delete-anonymize-v2' <<<"$health"               && grep -Fq 'Kebijakan Privasi ENTEGO' <<<"$privacy"               && grep -Fq 'PT NADMO STUDIO INDONESIA' <<<"$privacy"               && grep -Fq 'Penghapusan Akun ENTEGO' <<<"$removal"               && grep -Fq 'Informasi Legal ENTEGO' <<<"$legal"; then
-              echo "LIVE_V92_V64_RUNTIME=PASS"
-              exit 0
-            fi
-            echo "Attempt $attempt/24: deployed runtime is still converging"
-            sleep 5
-          done
-          echo "Production runtime did not expose v64 closure + public legal/privacy resources"
-          exit 1
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Verify public endpoints and identity privacy
-        shell: bash
-        run: |
-          set -euo pipefail
-          for path in /privacy.html /account-removal.html /legal.html /api/health /api/identity/config; do
-            code="$(curl -sS -o /tmp/entego.out -w '%{http_code}' --connect-timeout 8 --max-time 15 "$BASE_URL$path")"
-            test "$code" = "200"
-            echo "$path HTTP $code"
-          done
-          config="$(curl -fsS "$BASE_URL/api/identity/config")"
-          grep -Fq '"privateDocumentStorageConfigured":true' <<<"$config"
-          grep -Fq '"documentsPublic":false' <<<"$config"
-          grep -Fq '"payoutGate":"identity-approved-required"' <<<"$config"
-          echo "PUBLIC_PRIVACY_IDENTITY_ENDPOINTS=PASS"
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
 
-      - name: Verify public directory
+      - name: Install browser harness
         shell: bash
         run: |
-          set -euo pipefail
-          code="$(curl -sS -o /tmp/directory.json -w '%{http_code}' --connect-timeout 8 --max-time 15 "$BASE_URL/api/directory")"
-          test "$code" = "200"
-          grep -Fq '"ok":true' /tmp/directory.json
-          echo "PUBLIC_DIRECTORY=PASS"
+          npm install --no-save --no-audit --no-fund playwright-core
+          if command -v google-chrome >/dev/null 2>&1; then echo "CHROME=$(command -v google-chrome)" >> "$GITHUB_ENV"; \
+          elif command -v google-chrome-stable >/dev/null 2>&1; then echo "CHROME=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"; \
+          elif command -v chromium >/dev/null 2>&1; then echo "CHROME=$(command -v chromium)" >> "$GITHUB_ENV"; \
+          else echo 'No system Chrome found'; exit 1; fi
+
+      - name: Verify deployed v92/v64 runtime
+        shell: bash
+        run: |
+          timeout 120s node <<'NODE'
+          const { chromium } = require('playwright-core');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
+            const page=await browser.newPage({viewport:{width:412,height:915}});
+            await page.goto(process.env.BASE_URL+'/',{waitUntil:'domcontentloaded',timeout:15000});
+            await page.waitForTimeout(2500);
+
+            const result=await page.evaluate(async()=>{
+              const paths=['/api/health','/api/identity/config','/privacy.html','/account-removal.html','/legal.html','/api/directory'];
+              const out={};
+              for(const path of paths){
+                try{
+                  const r=await fetch(path,{cache:'no-store'});
+                  out[path]={status:r.status,text:await r.text()};
+                }catch(e){out[path]={status:0,text:String(e)}}
+              }
+              return {caches:'caches' in window?await caches.keys():[],out};
+            });
+            console.log(JSON.stringify({
+              caches:result.caches,
+              statuses:Object.fromEntries(Object.entries(result.out).map(([k,v])=>[k,v.status]))
+            }));
+
+            const h=result.out['/api/health'], i=result.out['/api/identity/config'];
+            const p=result.out['/privacy.html'], d=result.out['/account-removal.html'], l=result.out['/legal.html'], dir=result.out['/api/directory'];
+            if(!result.caches.includes('entego-v92'))process.exit(2);
+            if(h.status!==200||!h.text.includes('admin-reviewed-delete-anonymize-v2')||!h.text.includes('"version":"v64"'))process.exit(3);
+            if(p.status!==200||!p.text.includes('Kebijakan Privasi ENTEGO')||!p.text.includes('PT NADMO STUDIO INDONESIA'))process.exit(4);
+            if(d.status!==200||!d.text.includes('Penghapusan Akun ENTEGO'))process.exit(5);
+            if(l.status!==200||!l.text.includes('Informasi Legal ENTEGO')||!l.text.includes('AHU-A126270.AH.01.30.Tahun 2026'))process.exit(6);
+            const config=JSON.parse(i.text||'{}');
+            if(i.status!==200||config.privateDocumentStorageConfigured!==true||config.documentsPublic!==false||config.payoutGate!=='identity-approved-required')process.exit(7);
+            if(dir.status!==200||!dir.text.includes('"ok":true'))process.exit(8);
+            console.log('ENTEGO_LIVE_V92_V64=PASS');
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
