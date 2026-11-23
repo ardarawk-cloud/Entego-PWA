@@ -1,6 +1,6 @@
 # ENTEGO CURRENT STATE
 
-Checkpoint: 2026-08-17 / Event Ecosystem v3 / Android v1.0.12
+Checkpoint: 2026-11-23 / Android v1.0.13 release preparation
 Owner / Final Authority: Arda
 Startup command: `KAI ENTEGO START`
 Status: LAST VERIFIED SAFE POINT
@@ -10,6 +10,14 @@ ENTEGO remains in **Phase 1 — Marketplace / Enabler** plus Google Play maturit
 
 Current verified Android distribution baseline: **v1.0.12 — Account Role UX + Home Copy Polish**.
 Target after Play-readiness P0/P1 gates are complete remains: **v1.1.0 Play Production Candidate**.
+
+## Android release checkpoint, 23 November 2026
+
+The production web app opens its service catalog and the public API reports v64. The Play tracker records the v92 web release and the completed privacy, legal and account-removal work.
+
+The archived v1.0.12 APK passes Android v2 and v3 signature verification. Its package is `com.ardacore.entego`, its version code is `130101`, and its signer certificate SHA-256 is `32d3bbe17fb9675b3b60d32cc027c8b97a34c9e6750814fc43ab798e0d9c31de`. The protected ENTEGO signing key has been checked against that certificate and is available for offline signing.
+
+The previous v1.0.13 candidate artifact from build 111 expired. The next step is a fresh stable-track build, followed by offline signing and APK and AAB verification. The last distributed version is v1.0.12 until those checks pass. Physical-device QA and the remaining submission requirements are tracked in [the Play checklist](PLAY-SUBMISSION-CHECKLIST.md) and [issue 2](https://github.com/ardarawk-cloud/Entego-PWA/issues/2).
 
 ## Product Identity
 **ENTEGO — Event Ecosystem Platform**
@@ -245,7 +253,7 @@ Final APK directly inspected and verified to contain:
 - `assets/public/assets/index-v87.js`
 - `assets/public/logo-header.png`
 
-## Google Play Readiness — NOT YET COMPLETE
+## Google Play readiness at the 17 August v1.0.12 checkpoint
 Tracking issue: #2 — `Play Store Readiness v1.1.0 — Production Candidate`.
 
 P0 remains:
@@ -261,7 +269,7 @@ P0 remains:
 
 Do **not** call v1.0.12 a Play Production Candidate. It is the current stable product-development baseline.
 
-## Last Safe Point
+## 17 August v1.0.12 baseline
 - Event Ecosystem v3 taxonomy locked and implemented.
 - MUA / EO / WO included.
 - multi-service partner model active.
