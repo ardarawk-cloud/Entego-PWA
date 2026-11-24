@@ -1,6 +1,6 @@
 # ENTEGO CURRENT STATE
 
-Checkpoint: 2026-11-23 / Android v1.0.13 release preparation
+Checkpoint: 2026-11-24 / Android v1.0.13 signed release
 Owner / Final Authority: Arda
 Startup command: `KAI ENTEGO START`
 Status: LAST VERIFIED SAFE POINT
@@ -8,16 +8,23 @@ Status: LAST VERIFIED SAFE POINT
 ## Current Phase
 ENTEGO remains in **Phase 1 — Marketplace / Enabler** plus Google Play maturity preparation.
 
-Current verified Android distribution baseline: **v1.0.12 — Account Role UX + Home Copy Polish**.
+The signed Android distribution baseline is **v1.0.13** (version code `130112`).
 Target after Play-readiness P0/P1 gates are complete remains: **v1.1.0 Play Production Candidate**.
 
-## Android release checkpoint, 23 November 2026
+## Signed Android release, 24 November 2026
 
-The production web app opens its service catalog and the public API reports v64. The Play tracker records the v92 web release and the completed privacy, legal and account-removal work.
+[Stable build 112](https://github.com/ardarawk-cloud/Entego-PWA/actions/runs/45157418317) built commit `022bbf834f974ddb87f63cb28cd9cab924d4d1f5`. Its archive matched the SHA-256 digest supplied by GitHub, and the unsigned APK and AAB matched the build checksums before offline signing.
 
-The archived v1.0.12 APK passes Android v2 and v3 signature verification. Its package is `com.ardacore.entego`, its version code is `130101`, and its signer certificate SHA-256 is `32d3bbe17fb9675b3b60d32cc027c8b97a34c9e6750814fc43ab798e0d9c31de`. The protected ENTEGO signing key has been checked against that certificate and is available for offline signing.
+The v1.0.13 APK and AAB both use `com.ardacore.entego` and version code `130112`, up from `130101` in the signed v1.0.12 APK. They target Android API 36. The signed APK passed the Android v2 and v3 signature and ZIP alignment checks. The AAB passed strict JAR signature verification against the trusted ENTEGO certificate and Android bundle validation. The signer SHA-256 matched the archived v1.0.12 APK on both files.
 
-The previous v1.0.13 candidate artifact from build 111 expired. The next step is a fresh stable-track build, followed by offline signing and APK and AAB verification. The last distributed version is v1.0.12 until those checks pass. Physical-device QA and the remaining submission requirements are tracked in [the Play checklist](PLAY-SUBMISSION-CHECKLIST.md) and [issue 2](https://github.com/ardarawk-cloud/Entego-PWA/issues/2).
+Signer SHA-256 `32d3bbe17fb9675b3b60d32cc027c8b97a34c9e6750814fc43ab798e0d9c31de`
+
+| Signed release file | SHA-256 |
+| --- | --- |
+| `ENTEGO-Android-v1.0.13-STABLE-UPDATEABLE.apk` | `4f024e902567140d5275930a2f38a7b85a0d2d9986ab3c32bbdcdaaa9aae85a0` |
+| `ENTEGO-Android-v1.0.13-PLAY-UPLOAD.aab` | `5403ffc822ff4e0b0caae0879c5cf826b17e0d56bffd675c94e1dfc2f7b28275` |
+
+The package includes the v92 service worker, privacy policy, legal and account-removal pages, and the Android runtime bridge. The [Play checklist](PLAY-SUBMISSION-CHECKLIST.md) tracks physical Android QA, reviewer access, store assets and Play Console declarations.
 
 ## Product Identity
 **ENTEGO — Event Ecosystem Platform**
@@ -267,7 +274,7 @@ P0 remains:
 8. payment-policy review for future digital products
 9. required Play declarations
 
-Do **not** call v1.0.12 a Play Production Candidate. It is the current stable product-development baseline.
+At this August checkpoint, v1.0.12 was the signed product-development baseline.
 
 ## 17 August v1.0.12 baseline
 - Event Ecosystem v3 taxonomy locked and implemented.
@@ -289,4 +296,4 @@ Do **not** call v1.0.12 a Play Production Candidate. It is the current stable pr
 - next maturity work: dedicated Customer KYC architecture if Wallet is prioritized, plus Play Privacy Policy + Account Deletion + Data Safety.
 
 ## Continuity Instruction
-On `KAI ENTEGO START`, boot only ENTEGO, read this Current State plus official foundation/policy files, inspect current `main`, and continue from this Last Safe Point. Do not mix other ACC projects into ENTEGO. Do not invent missing state; mark unknown/conflict and resolve from repository/current state before changing production.
+On `KAI ENTEGO START`, boot only ENTEGO, read this Current State plus official foundation/policy files, inspect current `main`, and continue from the most recent dated release checkpoint. Do not mix other ACC projects into ENTEGO. Do not invent missing state; mark unknown/conflict and resolve from repository/current state before changing production.
