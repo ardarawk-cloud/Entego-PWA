@@ -1,6 +1,6 @@
 # ENTEGO — Play Production Submission Checklist
 
-Date: 2026-10-04
+Date: 2026-11-24
 Target: v1.1.0 Play Production Candidate
 Package hard lock: `com.ardacore.entego`
 
@@ -45,7 +45,7 @@ This checklist separates work that is implemented in source from work that must 
 Reviewer passwords, OTP secrets, private identity documents, signing keys and payment secrets must never be committed to this repository.
 
 ## D. Android generated-package audit
-- [ ] Build candidate AAB with protected ENTEGO signing identity.
+- [x] Sign the v1.0.13 AAB with the protected ENTEGO identity.
 - [x] Confirm `applicationId=com.ardacore.entego`.
 - [x] Confirm generated v1.0.13 versionCode is greater than the signed v1.0.12 baseline.
 - [x] Inspect generated release merged manifest permissions.
@@ -53,7 +53,7 @@ Reviewer passwords, OTP secrets, private identity documents, signing keys and pa
 - [ ] Confirm camera permission appears only as required by current KYC/media capture behavior.
 - [x] Confirm release WebView debugging is disabled.
 - [x] Confirm production logging behavior.
-- [ ] Retain checksum and signing certificate evidence.
+- [x] Record signed APK/AAB hashes and verify their certificate against the archived v1.0.12 APK. See [the release checkpoint](ENTEGO-CURRENT-STATE.md).
 
 ## E. Real Android critical-flow evidence
 Test on physical devices before Production Candidate status:
@@ -113,7 +113,7 @@ Test on physical devices before Production Candidate status:
 - [x] Client recovery smoke passes.
 - [x] Stable Android v1.0.13 APK/AAB build passes before signing.
 - [x] Play screenshot capture workflow passes and publishes `ENTEGO-Play-Store-Screenshots-v92`.
-- [ ] Stable signing step remains blocked until the existing ENTEGO signing key is restored to protected GitHub secrets.
+- [x] Verify the offline-signed outputs of stable build 112. The APK passed v2/v3 signature and alignment checks. The AAB passed strict JAR signature and bundle validation.
 
 ## Release gate
 Do not label ENTEGO `v1.1.0 Play Production Candidate` until Sections B–E are complete, critical real-device flows have evidence, and the final AAB passes protected-signing/update-chain verification.
